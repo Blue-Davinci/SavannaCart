@@ -67,7 +67,8 @@ cp .env.example .env
 Run migrations:
 
 ```
-make migrate
+cd /internal/sql/schema
+goose postgres <connection string>  up
 ```
 
 Start Redis and PostgreSQL (if using docker-compose):
@@ -134,7 +135,7 @@ Kubernetes manifests are located in the `/deploy/k8s` directory for deployment v
 
 ## ✍️ Authors <a name = "authors"></a>
 
-- [@BrianKaricha](https://github.com/Blue-Davinci) - Design & Implementation
+- [@Blue](https://github.com/Blue-Davinci) - Design & Implementation
 
 See also the list of [contributors](https://github.com/Blue-Davinci/savannacart/contributors) who participated in this project.
 
