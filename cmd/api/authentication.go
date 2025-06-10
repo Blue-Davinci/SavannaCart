@@ -67,6 +67,27 @@ func (app *application) InitOIDC() error {
 	return nil
 }
 
+// logoutUserHandler() is the main endpoint responsible for logging out the user.
+// Currently, we will just terminate a user's SSE connection if they have one.
+func (app *application) logoutUserHandler(w http.ResponseWriter, r *http.Request) {
+	// Get the user from the context
+	userID := app.contextGetUser(r).ID
+	// delete all their authentication tokens
+	err := app.models.Tokens.DeleteAllForUser(data.ScopeAuthentication, userID)
+	if err != nil {
+		app.logger.Error("Error deleting authentication tokens for user",
+			zap.Int64("user_id", userID),
+			zap.Error(err))
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+	// write 200 ok
+	err = app.writeJSON(w, http.StatusOK, envelope{"message": "you have been logged out"}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
 // activateUserHandler() Handles activating a user. Inactive users cannot perform a multitude
 // of functions. This handler accepts a JSON request containing a plaintext activation token
 // and activates the user associated with the token & the activate scope if that token exists.
