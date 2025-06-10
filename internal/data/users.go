@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Blue-Davinci/SavannaCart/internal/database"
+	"github.com/Blue-Davinci/SavannaCart/internal/validator"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -96,6 +97,52 @@ var AnonymousUser = &User{}
 // Check if a User instance is the AnonymousUser.
 func (u *User) IsAnonymous() bool {
 	return u == AnonymousUser
+}
+
+func (m UserModel) GetByEmail(email, encryption_key string) (*User, error) {
+	// Get our context
+	ctx, cancel := contextGenerator(context.Background(), DefaultUserDBContextTimeout)
+	defer cancel()
+	// Get the user
+	user, err := m.DB.GetUserByEmail(ctx, email)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrGeneralRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+	// make a user
+	emailUser := populateUser(user)
+	// return
+	return emailUser, nil
+}
+
+func ValidateEmail(v *validator.Validator, email string) {
+	v.Check(email != "", "email", "must be provided")
+	v.Check(validator.Matches(email, validator.EmailRX), "email", "must be a valid email address")
+}
+func ValidateImageURL(v *validator.Validator, image_url string) {
+	v.Check(image_url != "", "image", "must be provided")
+}
+func ValidateName(v *validator.Validator, name, keyvalue string) {
+	v.Check(name != "", "name", "must be provided")
+	v.Check(len(name) <= 500, "name", "must not be more than 500 bytes long")
+}
+
+// ValidateUser() is a helper function that validates the fields of a User struct.
+// It uses the validator package to check the validity of the user's first name, last name,
+// email, and profile avatar URL.
+func ValidateUser(v *validator.Validator, user *User) {
+	// Call the standalone ValidateName() helper.
+	ValidateName(v, user.FirstName, "first_name")
+	ValidateName(v, user.LastName, "last_name")
+	// Call the standalone ValidateEmail() helper.
+	ValidateEmail(v, user.Email)
+	// Validate Image
+	ValidateImageURL(v, user.ProfileAvatarURL)
+	// nO Passwd hash for now
 }
 
 func (m UserModel) CreateNewUser(User *User) error {
