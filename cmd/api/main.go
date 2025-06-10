@@ -52,6 +52,13 @@ type config struct {
 		verifier    *oidc.IDTokenVerifier
 		oauthConfig *oauth2.Config
 	}
+	smtp struct {
+		host     string
+		port     int
+		username string
+		password string
+		sender   string
+	}
 }
 
 // app struct for dependency injection
@@ -91,6 +98,12 @@ func main() {
 	flag.StringVar(&cfg.app_urls.authentication_callback_url, "authentication-callback-url", "http://localhost:4000/v1/api/authentication", "Authentication Callback URL")
 	flag.StringVar(&cfg.app_urls.activation_callback_url, "activation-callback-url", "http://localhost:4000/v1/api/activation", "Activation Callback URL")
 	flag.StringVar(&cfg.app_urls.provide_url, "provide-url", "https://accounts.google.com", "Provide URL")
+	// SMTP configuration
+	flag.StringVar(&cfg.smtp.host, "smtp-host", os.Getenv("SAVANNACART_SMTP_HOST"), "SMTP server hostname")
+	flag.IntVar(&cfg.smtp.port, "smtp-port", 587, "SMTP server port")
+	flag.StringVar(&cfg.smtp.username, "smtp-username", os.Getenv("SAVANNACART_SMTP_USERNAME"), "SMTP server username")
+	flag.StringVar(&cfg.smtp.password, "smtp-password", os.Getenv("SAVANNACART_SMTP_PASSWORD"), "SMTP server password")
+	flag.StringVar(&cfg.smtp.sender, "smtp-sender", os.Getenv("SAVANNACART_SMTP_SENDER"), "SMTP sender email address")
 	// CORS configuration
 	flag.Func("cors-trusted-origins", "Trusted CORS origins (space separated)", func(val string) error {
 		cfg.cors.trustedOrigins = strings.Fields(val)
