@@ -26,7 +26,7 @@ func (app *application) routes() http.Handler {
 	// dynamic protected middleware
 	dynamicMiddleware := alice.New(app.requireAuthenticatedUser, app.requireActivatedUser)
 	// Permission Middleware, this will apply to specific routes that are capped by the permissions
-	adminPermissionMiddleware := alice.New(app.requirePermission("admin:read"))
+	adminPermissionMiddleware := alice.New(app.requirePermission("admin:write"))
 
 	// Apply the global middleware to the router
 	router.Use(globalMiddleware)
@@ -69,6 +69,11 @@ func (app *application) categoryRoutes(adminMIddleware *alice.Chain) chi.Router 
 	categoryRoutes := chi.NewRouter()
 	// Get all categories, open to everyone who is authenticated
 	categoryRoutes.Get("/", app.getAllCategoriesHandler)
+
+	// Admin only routes
+	categoryRoutes.With(adminMIddleware.Then).Post("/", app.createNewCategoryHandler)
+	categoryRoutes.With(adminMIddleware.Then).Patch("/{categoryID:[0-9]+}/{versionID:[0-9]+}", app.updateCategoryHandler)
+	categoryRoutes.With(adminMIddleware.Then).Delete("/{categoryID:[0-9]+}", app.deleteCategoryByIDHandler)
 
 	return categoryRoutes
 }
