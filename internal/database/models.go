@@ -5,8 +5,54 @@
 package database
 
 import (
+	"database/sql"
 	"time"
 )
+
+type Category struct {
+	ID        int32
+	Name      string
+	ParentID  sql.NullInt32
+	Version   int32
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+type Order struct {
+	ID        int32
+	UserID    int32
+	TotalKes  string
+	Status    string
+	Version   int32
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+type OrderItem struct {
+	ID           int32
+	OrderID      int32
+	ProductID    int32
+	Quantity     int32
+	UnitPriceKes string
+	CreatedAt    time.Time
+}
+
+type Permission struct {
+	ID   int64
+	Code string
+}
+
+type Product struct {
+	ID            int32
+	Name          string
+	PriceKes      string
+	CategoryID    int32
+	Description   sql.NullString
+	StockQuantity int32
+	Version       int32
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+}
 
 type Token struct {
 	Hash   []byte
@@ -29,4 +75,9 @@ type User struct {
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
 	LastLogin        time.Time
+}
+
+type UsersPermission struct {
+	UserID       int64
+	PermissionID int64
 }

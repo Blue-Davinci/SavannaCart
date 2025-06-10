@@ -95,3 +95,10 @@ func (app *application) notFoundResponse(w http.ResponseWriter, r *http.Request)
 	message := "the requested resource could not be found"
 	app.errorResponse(w, r, http.StatusNotFound, message)
 }
+
+// The notPermittedResponse() method will return 403 not permitted error, that is the account doesn't
+// have the necessary permissions to access this resource.
+func (app *application) notPermittedResponse(w http.ResponseWriter, r *http.Request) {
+	message := "your user account doesn't have the necessary permissions to access this resource"
+	app.errorResponse(w, r, http.StatusForbidden, message)
+}
