@@ -13,6 +13,7 @@ import (
 	"github.com/Blue-Davinci/SavannaCart/internal/data"
 	"github.com/Blue-Davinci/SavannaCart/internal/database"
 	"github.com/Blue-Davinci/SavannaCart/internal/logger"
+	"github.com/Blue-Davinci/SavannaCart/internal/mailer"
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
@@ -67,6 +68,7 @@ type application struct {
 	logger *zap.Logger
 	models data.Models
 	wg     sync.WaitGroup
+	mailer mailer.Mailer
 }
 
 func main() {
@@ -127,13 +129,17 @@ func main() {
 		config: cfg,
 		logger: logger,
 		models: data.NewModels(db),
-	}
-	// Initialize OIDC at startup
+		mailer: mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.password, cfg.smtp.sender),
+	} // Initialize OIDC at startup
 	err = app.InitOIDC()
 	if err != nil {
 		logger.Fatal("Failed to initialize OIDC", zap.Error(err))
 	}
 	logger.Info("OIDC initialized successfully")
+
+	// Generate and print OAuth URL for easy testing
+	app.generateAndPrintOAuthURL()
+
 	// Initialize the server
 	logger.Info("Loaded Cors Origins", zap.Strings("origins", cfg.cors.trustedOrigins))
 	err = app.server()
