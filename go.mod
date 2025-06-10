@@ -11,4 +11,8 @@ require (
 	golang.org/x/crypto v0.39.0
 )
 
-require go.uber.org/multierr v1.10.0 // indirect
+require (
+	github.com/coreos/go-oidc/v3 v3.14.1 // indirect
+	go.uber.org/multierr v1.10.0 // indirect
+	golang.org/x/oauth2 v0.30.0 // indirect
+)
