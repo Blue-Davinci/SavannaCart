@@ -2,10 +2,12 @@ package main
 
 import (
 	"database/sql"
+	"expvar"
 	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -60,6 +62,11 @@ type config struct {
 		password string
 		sender   string
 	}
+	limiter struct {
+		rps     float64
+		burst   int
+		enabled bool
+	}
 }
 
 // app struct for dependency injection
@@ -106,6 +113,10 @@ func main() {
 	flag.StringVar(&cfg.smtp.username, "smtp-username", os.Getenv("SAVANNACART_SMTP_USERNAME"), "SMTP server username")
 	flag.StringVar(&cfg.smtp.password, "smtp-password", os.Getenv("SAVANNACART_SMTP_PASSWORD"), "SMTP server password")
 	flag.StringVar(&cfg.smtp.sender, "smtp-sender", os.Getenv("SAVANNACART_SMTP_SENDER"), "SMTP sender email address")
+	// Rate limiter flags
+	flag.Float64Var(&cfg.limiter.rps, "limiter-rps", 5, "Rate limiter maximum requests per second")
+	flag.IntVar(&cfg.limiter.burst, "limiter-burst", 10, "Rate limiter maximum burst")
+	flag.BoolVar(&cfg.limiter.enabled, "limiter-enabled", true, "Enable rate limiter")
 	// CORS configuration
 	flag.Func("cors-trusted-origins", "Trusted CORS origins (space separated)", func(val string) error {
 		cfg.cors.trustedOrigins = strings.Fields(val)
@@ -124,6 +135,8 @@ func main() {
 	if err != nil {
 		logger.Fatal(err.Error(), zap.String("dsn", cfg.db.dsn))
 	}
+	// Init our exp metrics variables for server metrics.
+	publishMetrics()
 
 	app := &application{
 		config: cfg,
@@ -147,6 +160,20 @@ func main() {
 		logger.Fatal("Error while starting server.", zap.String("error", err.Error()))
 	}
 
+}
+
+// publishMetrics exposes our application specific metrics
+// It sets the version, the number of active goroutines, and the current Unix timestamp.
+func publishMetrics() {
+	expvar.NewString("version").Set(version)
+	// Publish the number of active goroutines.
+	expvar.Publish("goroutines", expvar.Func(func() any {
+		return runtime.NumGoroutine()
+	}))
+	// Publish the current Unix timestamp.
+	expvar.Publish("timestamp", expvar.Func(func() any {
+		return time.Now().Unix()
+	}))
 }
 
 // getCurrentPath invokes getEnvPath to get the path to the .env file based on the current working directory.

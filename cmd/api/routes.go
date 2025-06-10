@@ -1,12 +1,12 @@
 package main
 
 import (
-	"fmt"
+	"expvar"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
-	"go.uber.org/zap"
+	"github.com/justinas/alice"
 )
 
 // routes() is a method that returns a http.Handler that contains all the routes for the application
@@ -20,10 +20,19 @@ func (app *application) routes() http.Handler {
 		AllowCredentials: false,
 		MaxAge:           300, // Maximum value not ignored by any of major browsers
 	})) // Make our categorized routes
+	//Use alice to make a global middleware chain.
+	globalMiddleware := alice.New(app.metrics, app.recoverPanic, app.rateLimit, app.authenticate).Then
+
+	// dynamic protected middleware
+	dynamicMiddleware := alice.New(app.requireAuthenticatedUser, app.requireActivatedUser)
+
+	// Apply the global middleware to the router
+	router.Use(globalMiddleware)
+
 	v1Router := chi.NewRouter()
 
 	v1Router.Mount("/", app.generalRoutes())
-	v1Router.Mount("/api", app.apiKeyRoutes())
+	v1Router.Mount("/api", app.apiKeyRoutes(&dynamicMiddleware))
 
 	// Mount the v1Router to the main base router
 	router.Mount("/v1", v1Router)
@@ -34,23 +43,19 @@ func (app *application) routes() http.Handler {
 func (app *application) generalRoutes() chi.Router {
 	router := chi.NewRouter()
 
-	router.Get("/", app.welcomeHandler)
-
+	router.Get("/debug/vars", func(w http.ResponseWriter, r *http.Request) {
+		expvar.Handler().ServeHTTP(w, r)
+	})
 	return router
 }
 
-// welcomeHandler handles the welcome endpoint
-func (app *application) welcomeHandler(w http.ResponseWriter, r *http.Request) {
-	app.logger.Info("welcomeHandler called", zap.String("method", r.Method), zap.String("url", r.URL.String()))
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprintln(w, `{"message": "Welcome to the SavannaCart API!"}`)
-}
-
-func (app *application) apiKeyRoutes() chi.Router {
+func (app *application) apiKeyRoutes(dynamicMiddleware *alice.Chain) chi.Router {
 	apiKeyRoutes := chi.NewRouter()
 	// OAuth callback endpoint - must be GET since Google redirects with GET
 	apiKeyRoutes.Get("/authentication", app.createAuthenticationApiKeyHandler)
 	apiKeyRoutes.Put("/activation", app.activateUserHandler)
+
+	// lougput route only applies to people who are registered
+	apiKeyRoutes.With(dynamicMiddleware.Then).Post("/logout", app.logoutUserHandler)
 	return apiKeyRoutes
 }
