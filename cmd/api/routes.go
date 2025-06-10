@@ -51,5 +51,6 @@ func (app *application) apiKeyRoutes() chi.Router {
 	apiKeyRoutes := chi.NewRouter()
 	// OAuth callback endpoint - must be GET since Google redirects with GET
 	apiKeyRoutes.Get("/authentication", app.createAuthenticationApiKeyHandler)
+	apiKeyRoutes.Put("/activation", app.activateUserHandler)
 	return apiKeyRoutes
 }

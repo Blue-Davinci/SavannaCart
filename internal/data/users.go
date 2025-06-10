@@ -55,6 +55,12 @@ type User struct {
 	UpdatedAt        time.Time `json:"updated_at"`
 	LastLogin        time.Time `json:"last_login"`
 }
+type UserMinimalInfo struct {
+	FirstName        string `json:"first_name"`
+	LastName         string `json:"last_name"`
+	ProfileAvatarURL string `json:"profile_avatar_url"`
+	Activated        bool   `json:"activated"`
+}
 
 // Create a custom password type which is a struct containing the plaintext and hashed
 // versions of the password for a user.
@@ -240,6 +246,44 @@ func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
 	return tokenuser, nil
 }
 
+// UpdateUser() updates the details of a user in the database.
+// The function takes a pointer to a User struct and an encryption key as input.
+// We decode the key, use it to encrypt necessary items before we save it back to the DB
+func (m UserModel) UpdateUser(user *User) error {
+	// get context
+	ctx, cancel := contextGenerator(context.Background(), DefaultUserDBContextTimeout)
+	defer cancel()
+	// perform the update
+	updatedUser, err := m.DB.UpdateUser(ctx, database.UpdateUserParams{
+		FirstName:        user.FirstName,
+		LastName:         user.LastName,
+		Email:            user.Email,
+		ProfileAvatarUrl: user.ProfileAvatarURL,
+		Password:         user.Password.hash,
+		RoleLevel:        user.RoleLevel,
+		Activated:        user.Activated,
+		LastLogin:        user.LastLogin,
+		ID:               user.ID,
+		Version:          int32(user.Version),
+	})
+	// check for any error
+	if err != nil {
+		switch {
+		case err.Error() == `pq: duplicate key value violates unique constraint "users_email_key"`:
+			return ErrDuplicateEmail
+		case errors.Is(err, sql.ErrNoRows):
+			return ErrEditConflict
+		default:
+			return err
+		}
+	}
+	// fill in the version and update time as well
+	user.Version = updatedUser.Version
+	user.UpdatedAt = updatedUser.UpdatedAt
+	// we are good
+	return nil
+}
+
 // populateUser() is a helper function that takes a database.User struct and returns a
 // pointer to a User struct containing the same data. It also decrypts the phone number
 // using the provided encryption key.
@@ -247,7 +291,6 @@ func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
 // and populates a User struct based on the type of userRow.
 // The function currently supports two types: database.GetForTokenRow and database.User.
 // If a new row type is introduced, this function can be extended to handle it.
-
 func populateUser(userRow interface{}) *User {
 	switch user := userRow.(type) {
 	// Case for database.GetForTokenRow: Populates a User object with fields specific to the GetForTokenRow
