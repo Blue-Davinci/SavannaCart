@@ -67,6 +67,114 @@ func (app *application) InitOIDC() error {
 	return nil
 }
 
+// activateUserHandler() Handles activating a user. Inactive users cannot perform a multitude
+// of functions. This handler accepts a JSON request containing a plaintext activation token
+// and activates the user associated with the token & the activate scope if that token exists.
+func (app *application) activateUserHandler(w http.ResponseWriter, r *http.Request) {
+	// Parse the plaintext activation token from the request body.
+	var input struct {
+		TokenPlaintext string `json:"token"`
+	}
+	err := app.readJSON(w, r, &input)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+	// Validate the plaintext token provided by the client.
+	v := validator.New()
+	if data.ValidateTokenPlaintext(v, input.TokenPlaintext); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+	// Retrieve the details of the user associated with the token using the
+	// GetForToken() method. If no matching record is found, then we let the
+	// client know that the token they provided is not valid.
+	user, err := app.models.Users.GetForToken(data.ScopeActivation, input.TokenPlaintext)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrGeneralRecordNotFound):
+			v.AddError("token", "invalid or expired activation token")
+			app.failedValidationResponse(w, r, v.Errors)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+	app.logger.Info("User Version: ", zap.Int("Version", int(user.Version)))
+	// Update the user's activation status.
+	user.Activated = true
+	// Save the updated user record in our database, checking for any edit conflicts in
+	// the same way that we did for our movie records.
+	err = app.models.Users.UpdateUser(user)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrEditConflict):
+			app.editConflictResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+	// If everything went successfully, then we delete all activation tokens for the
+	// user.
+	err = app.models.Tokens.DeleteAllForUser(data.ScopeActivation, user.ID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+	// Succesful, so we send an email for a succesful activation
+	app.background(func() {
+		// As there are now multiple pieces of data that we want to pass to our email
+		// templates, we create a map to act as a 'holding structure' for the data. This
+		// contains the plaintext version of the activation token for the user, along
+		// with their ID.
+		data := map[string]any{
+			"loginURL":  app.config.app_urls.authentication_callback_url,
+			"firstName": user.FirstName,
+			"lastName":  user.LastName,
+		}
+		// Send the welcome email, passing in the map above as dynamic data.
+		err = app.mailer.Send(user.Email, "user_succesful_activation.tmpl", data)
+		if err != nil {
+			app.logger.Error("Error sending welcome email", zap.String("email", user.Email), zap.Error(err))
+		}
+	})
+
+	// Generate authentication token for the activated user
+	authToken, err := app.generateUserAuthenticationToken(user)
+	if err != nil {
+		app.logger.Error("Error generating authentication token for activated user", zap.Error(err))
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	app.logger.Info("User successfully activated and authenticated",
+		zap.String("email", user.Email),
+		zap.Int64("user_id", user.ID))
+
+	// Send complete response with user details and authentication token
+	response := envelope{
+		"message": "Account activated successfully! You are now logged in.",
+		"user": envelope{
+			"id":         user.ID,
+			"email":      user.Email,
+			"first_name": user.FirstName,
+			"last_name":  user.LastName,
+			"activated":  user.Activated,
+		},
+		"authentication_token": envelope{
+			"token":  authToken.Plaintext,
+			"expiry": authToken.Expiry,
+		},
+	}
+
+	err = app.writeJSON(w, http.StatusOK, response, nil)
+	if err != nil {
+		app.logger.Error("Error writing JSON response for user activation", zap.Error(err))
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
 // createAuthenticationApiKeyHandler is our main authentication endpoint handler and the hitpoint for tha auth callback
 // It will handle the OAuth2.0 flow, including redirecting to the provider, handling the callback, and generating API keys.
 // It will also handle the creation of API keys for authenticated users.
@@ -240,20 +348,21 @@ func (app *application) handleOAuthSignup(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// Send activation email
-	activationURL := fmt.Sprintf("%s?token=%s", app.config.app_urls.activation_callback_url, activationToken.Plaintext)
-	emailData := map[string]any{
-		"activationURL": activationURL,
-		"firstName":     newUser.FirstName,
-		"lastName":      newUser.LastName,
-		"userID":        newUser.ID,
-	}
+	app.background(func() {
+		// Send activation email
+		activationURL := fmt.Sprintf("%s?token=%s", app.config.app_urls.activation_callback_url, activationToken.Plaintext)
+		emailData := map[string]any{
+			"activationURL": activationURL,
+			"firstName":     newUser.FirstName,
+			"lastName":      newUser.LastName,
+			"userID":        newUser.ID,
+		}
+		err = app.mailer.Send(newUser.Email, "user_welcome.tmpl", emailData)
+		if err != nil {
+			app.logger.Error("Error sending welcome email", zap.Error(err))
+		}
 
-	err = app.mailer.Send(newUser.Email, "user_welcome.tmpl", emailData)
-	if err != nil {
-		app.logger.Error("Error sending welcome email", zap.Error(err))
-		// Don't return error here, user is created, just log the email issue
-	}
+	})
 
 	// Return success response - NO TOKEN GENERATION for new users
 	response := envelope{
@@ -297,16 +406,8 @@ func (app *application) handleOAuthLogin(w http.ResponseWriter, r *http.Request,
 		return
 	}
 
-	// Delete any existing authentication tokens for this user
-	err := app.models.Tokens.DeleteAllForUser(data.ScopeAuthentication, user.ID)
-	if err != nil {
-		app.logger.Error("Error deleting existing tokens", zap.Error(err))
-		app.serverErrorResponse(w, r, err)
-		return
-	}
-
-	// Generate a new authentication token with default expiry
-	token, err := app.models.Tokens.New(user.ID, data.DefaultTokenExpiryTime, data.ScopeAuthentication)
+	// Generate authentication token using our modular helper
+	token, err := app.generateUserAuthenticationToken(user)
 	if err != nil {
 		app.logger.Error("Error generating authentication token", zap.Error(err))
 		app.serverErrorResponse(w, r, err)
@@ -377,4 +478,22 @@ func generateSecureToken(length int) string {
 		b[i] = charset[time.Now().UnixNano()%int64(len(charset))]
 	}
 	return string(b)
+}
+
+// generateUserAuthenticationToken generates a new authentication token for a user
+// This is a helper function to keep token generation logic modular and reusable
+func (app *application) generateUserAuthenticationToken(user *data.User) (*data.Token, error) {
+	// Delete any existing authentication tokens for this user
+	err := app.models.Tokens.DeleteAllForUser(data.ScopeAuthentication, user.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to delete existing tokens: %w", err)
+	}
+
+	// Generate a new authentication token with default expiry
+	token, err := app.models.Tokens.New(user.ID, data.DefaultTokenExpiryTime, data.ScopeAuthentication)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate new token: %w", err)
+	}
+
+	return token, nil
 }
