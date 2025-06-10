@@ -35,8 +35,9 @@ func (app *application) routes() http.Handler {
 
 	v1Router.Mount("/", app.generalRoutes())
 	v1Router.Mount("/api", app.apiKeyRoutes(&dynamicMiddleware))
-	// this is a hybrid route
+	// this are hybrid routes
 	v1Router.With(dynamicMiddleware.Then).Mount("/categories", app.categoryRoutes(&adminPermissionMiddleware))
+	v1Router.With(dynamicMiddleware.Then).Mount("/products", app.productRoutes(&adminPermissionMiddleware))
 
 	// Mount the v1Router to the main base router
 	router.Mount("/v1", v1Router)
@@ -76,4 +77,16 @@ func (app *application) categoryRoutes(adminMIddleware *alice.Chain) chi.Router 
 	categoryRoutes.With(adminMIddleware.Then).Delete("/{categoryID:[0-9]+}", app.deleteCategoryByIDHandler)
 
 	return categoryRoutes
+}
+
+// productRoutes() is a method that returns a chi.Router that contains all the product routes
+func (app *application) productRoutes(adminMIddleware *alice.Chain) chi.Router {
+	productRoutes := chi.NewRouter()
+	// get all products, open to everyone who is authenticated
+	productRoutes.Get("/", app.getAllProductsHandler)
+
+	// Create a new product, open to everyone who is authenticated
+	productRoutes.With(adminMIddleware.Then).Post("/", app.createNewProductsHandler)
+
+	return productRoutes
 }
