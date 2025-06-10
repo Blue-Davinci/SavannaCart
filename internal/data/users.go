@@ -2,6 +2,8 @@ package data
 
 import (
 	"context"
+	"crypto/sha256"
+	"database/sql"
 	"errors"
 	"time"
 
@@ -128,4 +130,70 @@ func (m UserModel) CreateNewUser(User *User) error {
 
 	// return nil if no error
 	return nil
+}
+
+// GetForToken() retrieves the details of a user based on a token, scope, and encryption key.
+func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error) {
+	// Calculate sha256 hash of plaintext
+	tokenHash := sha256.Sum256([]byte(tokenPlaintext))
+	ctx, cancel := contextGenerator(context.Background(), DefaultUserDBContextTimeout)
+	defer cancel()
+	// get the user
+	user, err := m.DB.GetForToken(ctx, database.GetForTokenParams{
+		Hash:   tokenHash[:],
+		Scope:  tokenScope,
+		Expiry: time.Now(),
+	})
+	// check for any error
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrGeneralRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+	// make a user
+	tokenuser := populateUser(user)
+	// fill in the user data
+	return tokenuser, nil
+}
+
+// populateUser() is a helper function that takes a database.User struct and returns a
+// pointer to a User struct containing the same data. It also decrypts the phone number
+// using the provided encryption key.
+// populateUser takes in a SQLC-generated row (userRow) and a decrypted phone number,
+// and populates a User struct based on the type of userRow.
+// The function currently supports two types: database.GetForTokenRow and database.User.
+// If a new row type is introduced, this function can be extended to handle it.
+
+func populateUser(userRow interface{}) *User {
+	switch user := userRow.(type) {
+	// Case for database.GetForTokenRow: Populates a User object with fields specific to the GetForTokenRow
+	// Case for database.User: Populates a User object with fields specific to the User type.
+	case database.User:
+		// Create a new password struct instance for the user.
+		userPassword := password{
+			hash: user.Password,
+		}
+		return &User{
+			ID:               user.ID,
+			FirstName:        user.FirstName,
+			LastName:         user.LastName,
+			Email:            user.Email,
+			ProfileAvatarURL: user.ProfileAvatarUrl,
+			Password:         userPassword,
+			OIDCSubject:      user.OidcSub,
+			RoleLevel:        user.RoleLevel,
+			Activated:        user.Activated,
+			Version:          user.Version,
+			CreatedAt:        user.CreatedAt,
+			UpdatedAt:        user.UpdatedAt,
+			LastLogin:        user.LastLogin,
+		}
+
+	// Default case: Returns nil if the input type does not match any supported types.
+	default:
+		return nil
+	}
 }

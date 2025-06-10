@@ -13,8 +13,10 @@ import (
 	"github.com/Blue-Davinci/SavannaCart/internal/data"
 	"github.com/Blue-Davinci/SavannaCart/internal/database"
 	"github.com/Blue-Davinci/SavannaCart/internal/logger"
+	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
+	"golang.org/x/oauth2"
 )
 
 var (
@@ -25,9 +27,11 @@ type config struct {
 	port int
 	env  string
 	api  struct {
-		name    string
-		author  string
-		version string
+		name               string
+		author             string
+		version            string
+		oidc_client_id     string
+		oidc_client_secret string
 	}
 	db struct {
 		dsn          string
@@ -37,6 +41,16 @@ type config struct {
 	}
 	cors struct {
 		trustedOrigins []string
+	}
+	app_urls struct {
+		authentication_callback_url string
+		activation_callback_url     string
+		provide_url                 string
+	}
+	authenticators struct {
+		provider    *oidc.Provider
+		verifier    *oidc.IDTokenVerifier
+		oauthConfig *oauth2.Config
 	}
 }
 
@@ -68,6 +82,21 @@ func main() {
 	flag.IntVar(&cfg.db.maxOpenConns, "db-max-open-conns", 25, "PostgreSQL max open connections")
 	flag.IntVar(&cfg.db.maxIdleConns, "db-max-idle-conns", 25, "PostgreSQL max idle connections")
 	flag.StringVar(&cfg.db.maxIdleTime, "db-max-idle-time", "15m", "PostgreSQL max connection idle time")
+	// api configuration
+	flag.StringVar(&cfg.api.name, "api-name", "SavannaCart", "API Name")
+	flag.StringVar(&cfg.api.author, "api-author", "Blue-Davinci", "API Author")
+	flag.StringVar(&cfg.api.oidc_client_id, "oidc-client-id", os.Getenv("SAVANNACART_OIDC_CLIENT_ID"), "OIDC Client ID")
+	flag.StringVar(&cfg.api.oidc_client_secret, "oidc-client-secret", os.Getenv("SAVANNACART_OIDC_CLIENT_SECRET"), "OIDC Client Secret")
+	// urls configuration
+	flag.StringVar(&cfg.app_urls.authentication_callback_url, "authentication-callback-url", "http://localhost:4000/v1/api/authentication", "Authentication Callback URL")
+	flag.StringVar(&cfg.app_urls.activation_callback_url, "activation-callback-url", "http://localhost:4000/v1/api/activation", "Activation Callback URL")
+	flag.StringVar(&cfg.app_urls.provide_url, "provide-url", "https://accounts.google.com", "Provide URL")
+	// CORS configuration
+	flag.Func("cors-trusted-origins", "Trusted CORS origins (space separated)", func(val string) error {
+		cfg.cors.trustedOrigins = strings.Fields(val)
+		return nil
+
+	})
 
 	// Parse the flags
 	flag.Parse()
@@ -86,6 +115,13 @@ func main() {
 		logger: logger,
 		models: data.NewModels(db),
 	}
+	// Initialize OIDC at startup
+	err = app.InitOIDC()
+	if err != nil {
+		logger.Fatal("Failed to initialize OIDC", zap.Error(err))
+	}
+	logger.Info("OIDC initialized successfully")
+	// Initialize the server
 	logger.Info("Loaded Cors Origins", zap.Strings("origins", cfg.cors.trustedOrigins))
 	err = app.server()
 	if err != nil {
