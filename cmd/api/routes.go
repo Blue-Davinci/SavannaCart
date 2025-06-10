@@ -23,6 +23,7 @@ func (app *application) routes() http.Handler {
 	v1Router := chi.NewRouter()
 
 	v1Router.Mount("/", app.generalRoutes())
+	v1Router.Mount("/api", app.apiKeyRoutes())
 
 	// Mount the v1Router to the main base router
 	router.Mount("/v1", v1Router)
@@ -44,4 +45,11 @@ func (app *application) welcomeHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintln(w, `{"message": "Welcome to the SavannaCart API!"}`)
+}
+
+func (app *application) apiKeyRoutes() chi.Router {
+	apiKeyRoutes := chi.NewRouter()
+	// OAuth callback endpoint - must be GET since Google redirects with GET
+	apiKeyRoutes.Get("/authentication", app.createAuthenticationApiKeyHandler)
+	return apiKeyRoutes
 }
