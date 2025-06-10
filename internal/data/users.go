@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/Blue-Davinci/SavannaCart/internal/database"
@@ -91,6 +92,39 @@ func (p *password) Matches(plaintextPassword string) (bool, error) {
 	return true, nil
 }
 
+// OAuthClaims represents the claims extracted from OAuth ID tokens
+type OAuthClaims struct {
+	Email         string `json:"email"`
+	EmailVerified bool   `json:"email_verified"`
+	Name          string `json:"name"`
+	GivenName     string `json:"given_name"`
+	FamilyName    string `json:"family_name"`
+	Picture       string `json:"picture"`
+	Subject       string `json:"sub"`
+}
+
+// ExtractNames extracts and processes first and last names from OAuth claims
+func (c *OAuthClaims) ExtractNames() (firstName, lastName string) {
+	firstName = c.GivenName
+	lastName = c.FamilyName
+
+	// Fallback: split the full name if individual names aren't available
+	if firstName == "" || lastName == "" {
+		if c.Name != "" {
+			nameParts := strings.Fields(c.Name)
+			if len(nameParts) >= 2 {
+				firstName = nameParts[0]
+				lastName = strings.Join(nameParts[1:], " ")
+			} else if len(nameParts) == 1 {
+				firstName = nameParts[0]
+				lastName = ""
+			}
+		}
+	}
+
+	return firstName, lastName
+}
+
 // Declare a new AnonymousUser variable.
 var AnonymousUser = &User{}
 
@@ -156,8 +190,6 @@ func (m UserModel) CreateNewUser(User *User) error {
 		ProfileAvatarUrl: User.ProfileAvatarURL,
 		Password:         User.Password.hash,
 		OidcSub:          User.OIDCSubject, // prolly encrypt this for security
-		RoleLevel:        User.RoleLevel,
-		Activated:        User.Activated,
 	})
 	if err != nil {
 		// check if user already exists
@@ -171,6 +203,7 @@ func (m UserModel) CreateNewUser(User *User) error {
 	// update the User struct with the created user data
 	User.ID = createdUser.ID
 	User.RoleLevel = createdUser.RoleLevel
+	User.Activated = createdUser.Activated
 	User.Version = createdUser.Version
 	User.CreatedAt = createdUser.CreatedAt
 	User.UpdatedAt = createdUser.UpdatedAt
