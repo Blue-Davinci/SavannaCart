@@ -21,7 +21,7 @@ INSERT INTO users (
     role_level,
     activated
 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
- RETURNING id, version, created_at, updated_at, last_login
+ RETURNING id, role_level, version, created_at, updated_at, last_login
 `
 
 type CreateNewUserParams struct {
@@ -37,6 +37,7 @@ type CreateNewUserParams struct {
 
 type CreateNewUserRow struct {
 	ID        int64
+	RoleLevel string
 	Version   int32
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -57,6 +58,7 @@ func (q *Queries) CreateNewUser(ctx context.Context, arg CreateNewUserParams) (C
 	var i CreateNewUserRow
 	err := row.Scan(
 		&i.ID,
+		&i.RoleLevel,
 		&i.Version,
 		&i.CreatedAt,
 		&i.UpdatedAt,

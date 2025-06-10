@@ -170,6 +170,7 @@ func (m UserModel) CreateNewUser(User *User) error {
 	}
 	// update the User struct with the created user data
 	User.ID = createdUser.ID
+	User.RoleLevel = createdUser.RoleLevel
 	User.Version = createdUser.Version
 	User.CreatedAt = createdUser.CreatedAt
 	User.UpdatedAt = createdUser.UpdatedAt
