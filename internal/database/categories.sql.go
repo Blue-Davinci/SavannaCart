@@ -49,7 +49,7 @@ func (q *Queries) DeleteCategory(ctx context.Context, id int32) error {
 }
 
 const getAllCategories = `-- name: GetAllCategories :many
-SELECT
+SELECT count(*) OVER() AS total_count,
     id,
     name,
     parent_id,
@@ -57,19 +57,38 @@ SELECT
     created_at,
     updated_at
 FROM categories
+WHERE ($1 = '' OR to_tsvector('simple', name) @@ plainto_tsquery('simple', $1))
 ORDER BY name
+LIMIT $2 OFFSET $3
 `
 
-func (q *Queries) GetAllCategories(ctx context.Context) ([]Category, error) {
-	rows, err := q.db.QueryContext(ctx, getAllCategories)
+type GetAllCategoriesParams struct {
+	Column1 interface{}
+	Limit   int32
+	Offset  int32
+}
+
+type GetAllCategoriesRow struct {
+	TotalCount int64
+	ID         int32
+	Name       string
+	ParentID   sql.NullInt32
+	Version    int32
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+}
+
+func (q *Queries) GetAllCategories(ctx context.Context, arg GetAllCategoriesParams) ([]GetAllCategoriesRow, error) {
+	rows, err := q.db.QueryContext(ctx, getAllCategories, arg.Column1, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Category
+	var items []GetAllCategoriesRow
 	for rows.Next() {
-		var i Category
+		var i GetAllCategoriesRow
 		if err := rows.Scan(
+			&i.TotalCount,
 			&i.ID,
 			&i.Name,
 			&i.ParentID,
