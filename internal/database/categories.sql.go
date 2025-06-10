@@ -38,14 +38,16 @@ func (q *Queries) CreateCategory(ctx context.Context, arg CreateCategoryParams) 
 	return i, err
 }
 
-const deleteCategory = `-- name: DeleteCategory :exec
+const deleteCategory = `-- name: DeleteCategory :one
 DELETE FROM categories
 WHERE id = $1
+RETURNING id
 `
 
-func (q *Queries) DeleteCategory(ctx context.Context, id int32) error {
-	_, err := q.db.ExecContext(ctx, deleteCategory, id)
-	return err
+func (q *Queries) DeleteCategory(ctx context.Context, id int32) (int32, error) {
+	row := q.db.QueryRowContext(ctx, deleteCategory, id)
+	err := row.Scan(&id)
+	return id, err
 }
 
 const getAllCategories = `-- name: GetAllCategories :many
@@ -107,6 +109,37 @@ func (q *Queries) GetAllCategories(ctx context.Context, arg GetAllCategoriesPara
 		return nil, err
 	}
 	return items, nil
+}
+
+const getCategoryById = `-- name: GetCategoryById :one
+SELECT
+    id,
+    name,
+    parent_id,
+    version,
+    created_at,
+    updated_at
+FROM categories
+WHERE id = $1 AND version = $2
+`
+
+type GetCategoryByIdParams struct {
+	ID      int32
+	Version int32
+}
+
+func (q *Queries) GetCategoryById(ctx context.Context, arg GetCategoryByIdParams) (Category, error) {
+	row := q.db.QueryRowContext(ctx, getCategoryById, arg.ID, arg.Version)
+	var i Category
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.ParentID,
+		&i.Version,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
 
 const updateCategory = `-- name: UpdateCategory :one

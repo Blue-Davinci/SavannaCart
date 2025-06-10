@@ -2,9 +2,17 @@ package data
 
 import (
 	"context"
+	"database/sql"
+	"errors"
+	"strings"
 	"time"
 
 	"github.com/Blue-Davinci/SavannaCart/internal/database"
+	"github.com/Blue-Davinci/SavannaCart/internal/validator"
+)
+
+var (
+	ErrDuplicateCategoryName = errors.New("category with this name already exists, please choose a different name")
 )
 
 // Define the TokenModel type.
@@ -26,6 +34,43 @@ const (
 	DefaultCategoryDBContextTimeout = 5 * time.Second
 )
 
+func ValidateURLID(v *validator.Validator, stockID int64, fieldName string) {
+	v.Check(stockID > 0, fieldName, "must be a valid ID")
+}
+
+func ValidateUpdatedCategory(v *validator.Validator, category *Category) {
+	// Validate the category name
+	v.Check(category.Name != "", "name", "must be provided")
+	// Validate the version
+	v.Check(category.Version > 0, "version", "must be greater than 0")
+}
+
+func (m CategoryModel) GetCategoryByID(categoryID, categoryVersion int32) (*Category, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), DefaultCategoryDBContextTimeout)
+	defer cancel()
+
+	categoryRow, err := m.DB.GetCategoryById(ctx, database.GetCategoryByIdParams{
+		ID:      categoryID,
+		Version: categoryVersion,
+	})
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrGeneralRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+	// Populate the Category struct with the data from the database row
+	populatedCategory := populateCategories(categoryRow)
+
+	return populatedCategory, nil
+}
+
+// GetAllCategories() retrieves all categories from the database.
+// It accepts a name filter and pagination filters, returning a slice of Category pointers,
+// metadata for pagination, and an error if any occurs.
+// If no categories are found, it returns ErrGeneralRecordNotFound.
 func (m CategoryModel) GetAllCategories(name string, filters Filters) ([]*Category, Metadata, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), DefaultCategoryDBContextTimeout)
 	defer cancel()
@@ -55,9 +100,103 @@ func (m CategoryModel) GetAllCategories(name string, filters Filters) ([]*Catego
 	return categories, metadata, nil
 }
 
+func (m CategoryModel) CreateNewCategory(category *Category) error {
+	ctx, cancel := context.WithTimeout(context.Background(), DefaultCategoryDBContextTimeout)
+	defer cancel()
+
+	// Convert 0 or invalid parent_id to NULL for root categories
+	parentID := convertValueToNullInt32(category.ParentId)
+
+	// Call the database query to create a new category
+	createdCategory, err := m.DB.CreateCategory(ctx, database.CreateCategoryParams{
+		Name: category.Name,
+		// use nullable int32 for ParentID
+		ParentID: parentID,
+	})
+	if err != nil {
+		switch {
+		case strings.Contains(err.Error(), "ux_categories_name_parent"):
+			return ErrDuplicateCategoryName
+		case strings.Contains(err.Error(), "duplicate key"):
+			return ErrDuplicateCategoryName
+		default:
+			return err
+		}
+	}
+	// fill the category struct with the created category data
+	category.ID = createdCategory.ID
+	category.Version = createdCategory.Version
+	category.CreatedAt = createdCategory.CreatedAt
+	category.UpdatedAt = createdCategory.UpdatedAt
+	// If the category was created successfully, return nil error
+	return nil
+
+}
+
+// UpdateCategory() updates an existing category in the database.
+// It accepts a pointer to a Category struct, which contains the updated data.
+// It returns an error if the update fails, including specific errors for duplicate names.
+// If the update is successful, it updates the category struct with the new data.
+func (m CategoryModel) UpdateCategory(category *Category) error {
+	ctx, cancel := contextGenerator(context.Background(), DefaultCategoryDBContextTimeout)
+	defer cancel()
+	// Convert 0 or invalid parent_id to NULL for root categories
+	parentID := convertValueToNullInt32(category.ParentId)
+	// Call the database query to update the category
+	updatedCategory, err := m.DB.UpdateCategory(ctx, database.UpdateCategoryParams{
+		ID:       category.ID,
+		Name:     category.Name,
+		ParentID: parentID,
+		Version:  category.Version,
+	})
+	if err != nil {
+		switch {
+		case strings.Contains(err.Error(), "ux_categories_name_parent"):
+			return ErrDuplicateCategoryName
+		case strings.Contains(err.Error(), "duplicate key"):
+			return ErrDuplicateCategoryName
+		default:
+			return err
+		}
+	}
+	// fill the category struct with the updated category data
+	category.ParentId = updatedCategory.ParentID.Int32
+	category.Version = updatedCategory.Version
+	category.UpdatedAt = updatedCategory.UpdatedAt
+	// If the category was updated successfully, return nil error
+	return nil
+
+}
+
+func (m CategoryModel) DeleteCategoryByID(categoryID int32) error {
+	ctx, cancel := contextGenerator(context.Background(), DefaultCategoryDBContextTimeout)
+	defer cancel()
+	// delete
+	_, err := m.DB.DeleteCategory(ctx, categoryID)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return ErrGeneralRecordNotFound
+		default:
+			return err
+		}
+	}
+	// done
+	return nil
+}
+
 func populateCategories(categoryRow any) *Category {
 	switch category := categoryRow.(type) {
 	case database.GetAllCategoriesRow:
+		return &Category{
+			ID:        category.ID,
+			Name:      category.Name,
+			ParentId:  category.ParentID.Int32,
+			Version:   category.Version,
+			CreatedAt: category.CreatedAt,
+			UpdatedAt: category.UpdatedAt,
+		}
+	case database.Category:
 		return &Category{
 			ID:        category.ID,
 			Name:      category.Name,
