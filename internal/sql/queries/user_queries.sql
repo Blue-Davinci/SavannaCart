@@ -9,7 +9,7 @@ INSERT INTO users (
     role_level,
     activated
 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
- RETURNING id, version, created_at, updated_at, last_login;
+ RETURNING id, role_level, version, created_at, updated_at, last_login;
 
 -- name: GetUserByEmail :one
 SELECT
