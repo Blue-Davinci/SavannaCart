@@ -15,6 +15,7 @@ type Models struct {
 	Tokens      TokenModel
 	Permissions PermissionModel
 	Categories  CategoryModel
+	Products    ProductModel
 }
 
 func NewModels(db *database.Queries) Models {
@@ -23,5 +24,6 @@ func NewModels(db *database.Queries) Models {
 		Tokens:      TokenModel{DB: db},
 		Permissions: PermissionModel{DB: db},
 		Categories:  CategoryModel{DB: db},
+		Products:    ProductModel{DB: db},
 	}
 }
