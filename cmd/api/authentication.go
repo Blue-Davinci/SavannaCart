@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/Blue-Davinci/SavannaCart/internal/data"
 	"github.com/coreos/go-oidc/v3/oidc"
 	"go.uber.org/zap"
 	"golang.org/x/oauth2"
@@ -85,27 +86,119 @@ func (app *application) createAuthenticationApiKeyHandler(w http.ResponseWriter,
 		app.logger.Error("OAuth error received",
 			zap.String("error", input.Error),
 			zap.String("description", input.ErrorDescription))
-		http.Error(w, fmt.Sprintf("OAuth error: %s", input.ErrorDescription), http.StatusBadRequest)
+		app.invalidCredentialsResponse(w, r)
 		return
 	}
 
-	// Validate that we received an authorization code
+	// Validate that we received an authorization code (no need of dedicated validator here since it's a simple check)
 	if input.AuthorizationCode == "" {
 		app.logger.Error("No authorization code received")
-		http.Error(w, "No authorization code received", http.StatusBadRequest)
+		app.invalidCredentialsResponse(w, r)
+		return
+	} // Exchange the authorization code for tokens
+	exchange_token, err := app.config.authenticators.oauthConfig.Exchange(context.Background(), input.AuthorizationCode)
+	if err != nil {
+		app.logger.Error("Error exchanging authorization code for tokens", zap.Error(err))
+		app.invalidCredentialsResponse(w, r)
 		return
 	}
 
-	// TODO: exchange the authorization code for tokens
-	// TODO: extract user information from the id_token
-	// TODO: verify and parse the id_token
-	// TODO: check if the user exists in the database
-	// TODO: if the user exists, generate an API key and return it
+	// Extract the ID Token from OAuth2 token
+	rawIDToken, ok := exchange_token.Extra("id_token").(string)
+	if !ok {
+		app.logger.Error("No id_token field in OAuth2 token")
+		app.serverErrorResponse(w, r, fmt.Errorf("no id_token field in OAuth2 token"))
+		return
+	}
 
-	err := app.writeJSON(w, http.StatusOK, envelope{"message": "Authentication API Key created successfully", "received_code": input}, nil)
+	// Verify and parse the ID token
+	idToken, err := app.config.authenticators.verifier.Verify(context.Background(), rawIDToken)
 	if err != nil {
-		app.logger.Error("Error writing JSON response", zap.Error(err))
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		app.logger.Error("Failed to verify ID Token", zap.Error(err))
+		app.invalidCredentialsResponse(w, r)
+		return
+	}
+
+	// Extract user information from the ID token
+	var claims struct {
+		Email         string `json:"email"`
+		EmailVerified bool   `json:"email_verified"`
+		Name          string `json:"name"`
+		GivenName     string `json:"given_name"`
+		FamilyName    string `json:"family_name"`
+		Picture       string `json:"picture"`
+		Subject       string `json:"sub"`
+	}
+
+	if err := idToken.Claims(&claims); err != nil {
+		app.logger.Error("Failed to extract claims from ID token", zap.Error(err))
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	app.logger.Info("OAuth user authenticated",
+		zap.String("email", claims.Email),
+		zap.String("name", claims.Name),
+		zap.Bool("email_verified", claims.EmailVerified))
+
+	// Check if the user exists in the database
+	user, err := app.models.Users.GetByEmail(claims.Email, "")
+	if err != nil {
+		// User doesn't exist, create a new one
+		// TODO: Implement user creation and email verification
+		app.logger.Info("User not found, would create new user", zap.String("email", claims.Email))
+
+		// For now, return success with user info
+		response := envelope{
+			"message": "New user detected - account creation flow needed",
+			"user_info": envelope{
+				"email":    claims.Email,
+				"name":     claims.Name,
+				"picture":  claims.Picture,
+				"verified": claims.EmailVerified,
+			},
+		}
+
+		err = app.writeJSON(w, http.StatusOK, response, nil)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+	// User exists, generate an API key
+	// Delete any existing authentication tokens for this user
+	err = app.models.Tokens.DeleteAllForUser(data.ScopeAuthentication, user.ID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	// Generate a new authentication token with 72 hour expiry
+	token, err := app.models.Tokens.New(user.ID, data.DefaultTokenExpiryTime, data.ScopeAuthentication)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	app.logger.Info("Existing user authenticated", zap.String("email", user.Email), zap.Int64("user_id", user.ID))
+
+	response := envelope{
+		"message": "Authentication successful",
+		"user": envelope{
+			"id":         user.ID,
+			"email":      user.Email,
+			"first_name": user.FirstName,
+			"last_name":  user.LastName,
+			"activated":  user.Activated,
+		},
+		"authentication_token": envelope{
+			"token":  token.Plaintext,
+			"expiry": token.Expiry,
+		},
+	}
+	err = app.writeJSON(w, http.StatusOK, response, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
 		return
 	}
 }
