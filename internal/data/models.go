@@ -1,6 +1,14 @@
 package data
 
-import "github.com/Blue-Davinci/SavannaCart/internal/database"
+import (
+	"errors"
+
+	"github.com/Blue-Davinci/SavannaCart/internal/database"
+)
+
+var (
+	ErrGeneralRecordNotFound = errors.New("record not found")
+)
 
 type Models struct {
 	Users  UserModel
