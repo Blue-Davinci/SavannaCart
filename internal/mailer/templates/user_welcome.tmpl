@@ -18,283 +18,266 @@ The SavannaCart Team
 {{ end }}
 
 {{define "htmlBody"}}
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Welcome to SavannaCart!</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            margin: 0;
-            padding: 20px;
-            min-height: 100vh;
+    <style type="text/css">
+        /* Reset styles */
+        body, table, td, p, a, li, blockquote {
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
         }
-        .container {
+        table, td {
+            mso-table-lspace: 0pt;
+            mso-table-rspace: 0pt;
+        }
+        img {
+            -ms-interpolation-mode: bicubic;
+            border: 0;
+            height: auto;
+            line-height: 100%;
+            outline: none;
+            text-decoration: none;
+        }
+        
+        /* Main styles */
+        body {
+            height: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            background-color: #f4f4f4;
+            font-family: Arial, sans-serif;
+        }
+        
+        .email-container {
             max-width: 600px;
             margin: 0 auto;
-            background: #ffffff;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-            position: relative;
+            background-color: #ffffff;
         }
-        .container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #f9ca24);
+        
+        .header-table {
+            background-color: #2c3e50;
+            width: 100%;
         }
-        .header {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-            padding: 30px 20px;
+        
+        .content-table {
+            background-color: #ffffff;
+            width: 100%;
+        }
+        
+        .footer-table {
+            background-color: #f8f9fa;
+            width: 100%;
+        }
+        
+        .btn {
+            background-color: #667eea;
+            border: none;
+            color: white;
+            padding: 15px 30px;
             text-align: center;
-            color: #ffffff;
-            position: relative;
-            overflow: hidden;
-        }
-        .header::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") repeat;
-            animation: float 20s infinite linear;
-        }
-        @keyframes float {
-            0% { transform: translate(-50%, -50%) rotate(0deg); }
-            100% { transform: translate(-50%, -50%) rotate(360deg); }
-        }
-        .header img {
-            max-width: 240px;
-            height: auto;
-            transition: transform 0.4s ease, filter 0.3s ease;
-            position: relative;
-            z-index: 1;
-            filter: brightness(1.1);
-        }
-        .header img:hover {
-            transform: scale(1.08);
-            filter: brightness(1.2);
-        }
-        .content {
-            padding: 40px 30px;
-            line-height: 1.7;
-            background: #ffffff;
-        }
-        .content h1 {
-            font-size: 28px;
-            margin-bottom: 20px;
-            color: #2c3e50;
-            font-weight: 600;
-            text-align: center;
-            position: relative;
-        }
-        .content h1::after {
-            content: '';
-            position: absolute;
-            bottom: -10px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 60px;
-            height: 3px;
-            background: linear-gradient(90deg, #ff6b6b, #4ecdc4);
-            border-radius: 2px;
-        }
-        .content p {
-            color: #555555;
-            margin-bottom: 16px;
+            text-decoration: none;
+            display: inline-block;
             font-size: 16px;
+            font-weight: bold;
+            border-radius: 5px;
+            margin: 10px 0;
         }
-        .user-id-box {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            border: 2px solid #dee2e6;
-            border-radius: 8px;
+        
+        .btn:hover {
+            background-color: #5a6fd8;
+        }
+        
+        .highlight-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #f39c12;
             padding: 15px;
             margin: 20px 0;
+        }
+        
+        .user-id-box {
+            background-color: #f8f9fa;
+            border: 2px solid #dee2e6;
+            padding: 15px;
             text-align: center;
-            position: relative;
-        }
-        .user-id-box::before {
-            content: '🆔';
-            position: absolute;
-            top: -12px;
-            left: 20px;
-            background: #ffffff;
-            padding: 0 8px;
-            font-size: 18px;
-        }
-        .user-id-box strong {
-            color: #2c3e50;
-            font-size: 18px;
-            font-family: 'Courier New', monospace;
-        }
-        .btn {
-            display: inline-block;
-            padding: 16px 32px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 50px;
-            text-decoration: none;
-            margin: 25px 0;
-            transition: all 0.3s ease;
-            font-weight: 600;
-            font-size: 16px;
-            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
-            position: relative;
-            overflow: hidden;
-        }
-        .btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: left 0.5s;
-        }
-        .btn:hover::before {
-            left: 100%;
-        }
-        .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 12px 25px rgba(102, 126, 234, 0.4);
-        }
-        .btn:active {
-            transform: translateY(-1px);
-        }
-        .highlight-box {
-            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
-            border-left: 4px solid #f39c12;
-            padding: 16px;
             margin: 20px 0;
-            border-radius: 0 8px 8px 0;
-            position: relative;
         }
-        .highlight-box::before {
-            content: '⚠️';
-            position: absolute;
-            top: -8px;
-            left: -8px;
-            background: #f39c12;
-            color: white;
-            width: 20px;
-            height: 20px;
+        
+        .social-link {
+            display: inline-block;
+            margin: 0 5px;
+            padding: 8px;
+            background-color: #667eea;
             border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-        }
-        .footer {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            text-align: center;
-            padding: 25px;
-            border-top: 1px solid #dee2e6;
-        }
-        .footer p {
-            margin-bottom: 15px;
-            color: #6c757d;
-            font-weight: 500;
-        }
-        .social-links {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 10px;
-        }
-        .social-links a {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            transition: all 0.3s ease;
             text-decoration: none;
         }
-        .social-links a:hover {
-            transform: translateY(-3px) scale(1.1);
-            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
-        }
-        .social-links img {
-            width: 20px;
-            height: 20px;
-            filter: brightness(0) invert(1);
-        }
-        @media (max-width: 600px) {
-            .container {
-                margin: 10px;
-                border-radius: 12px;
+        
+        /* Mobile styles */
+        @media screen and (max-width: 600px) {
+            .email-container {
+                width: 100% !important;
+                margin: 0 !important;
             }
-            .content {
-                padding: 25px 20px;
-            }
-            .content h1 {
-                font-size: 24px;
+            .content-padding {
+                padding: 20px !important;
             }
             .btn {
-                padding: 14px 28px;
-                font-size: 15px;
+                width: 90% !important;
+                padding: 15px 5px !important;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <img src="https://i.ibb.co/Rpq9Tvwy/savanna-cart-high-resolution-logo-photoaidcom-cropped.png" alt="SavannaCart Logo">
-        </div>
-        <div class="content">
-            <h1>Welcome to SavannaCart, {{.firstName}} {{.lastName}}!</h1>
-            <p>Hello {{.firstName}}! 👋</p>
-            <p>We are absolutely thrilled to have you join the SavannaCart family. Your account has been successfully created and you're just one step away from accessing our amazing e-commerce platform!</p>
-            
-            <div class="user-id-box">
-                <strong>Your User ID: {{.userID}}</strong>
-            </div>
-            
-            <p>To complete your registration and activate your account, please click the button below:</p>
-            
-            <div style="text-align: center;">
-                <a href="{{.activationURL}}" class="btn">🚀 Activate My Account</a>
-            </div>
-            
-            <div class="highlight-box">
-                <strong>Important:</strong> This is a <strong>one-time use</strong> activation token that will expire in <strong>3 days</strong>. Please activate your account as soon as possible.
-            </div>
-            
-            <p>Once activated, you'll be able to:</p>
-            <ul style="color: #555555; padding-left: 20px;">
-                <li>Browse our extensive product catalog</li>
-                <li>Add items to your cart and wishlist</li>
-                <li>Track your orders in real-time</li>
-                <li>Enjoy personalized recommendations</li>
-                <li>Access exclusive member deals</li>
-            </ul>
-            
-            <p>If you have any questions or need assistance, our friendly support team is here to help!</p>
-            <p style="margin-top: 30px;"><strong>Happy Shopping!</strong><br>The SavannaCart Team 🛒</p>
-        </div>
-        <div class="footer">
-            <p>Stay connected with SavannaCart:</p>
-            <div class="social-links">
-                <a href="https://twitter.com/SavannaCart"><img src="https://img.icons8.com/ios-filled/50/000000/twitter.png" alt="Twitter"></a>
-                <a href="https://facebook.com/SavannaCart"><img src="https://img.icons8.com/ios-filled/50/000000/facebook-new.png" alt="Facebook"></a>
-                <a href="https://instagram.com/SavannaCart"><img src="https://img.icons8.com/ios-filled/50/000000/instagram-new.png" alt="Instagram"></a>
-                <a href="https://linkedin.com/company/savannacart"><img src="https://img.icons8.com/ios-filled/50/000000/linkedin.png" alt="LinkedIn"></a>
-            </div>
-        </div>
-    </div>
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+        <tr>
+            <td style="padding: 20px 0;">
+                <table class="email-container" role="presentation" border="0" cellpadding="0" cellspacing="0">
+                    <!-- Header -->
+                    <tr>
+                        <td>
+                            <table class="header-table" role="presentation" border="0" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td style="padding: 30px 20px; text-align: center;">
+                                        <img src="https://i.ibb.co/Rpq9Tvwy/savanna-cart-high-resolution-logo-photoaidcom-cropped.png" 
+                                             alt="SavannaCart Logo" 
+                                             style="max-width: 240px; height: auto; display: block; margin: 0 auto;"/>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                        <td>
+                            <table class="content-table" role="presentation" border="0" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td class="content-padding" style="padding: 40px 30px;">
+                                        <h1 style="color: #2c3e50; font-size: 28px; text-align: center; margin-bottom: 20px; font-weight: bold;">
+                                            Welcome to SavannaCart, {{.firstName}} {{.lastName}}!
+                                        </h1>
+                                        
+                                        <p style="color: #555555; font-size: 16px; line-height: 1.6; margin-bottom: 16px;">
+                                            Hello {{.firstName}}! 👋
+                                        </p>
+                                        
+                                        <p style="color: #555555; font-size: 16px; line-height: 1.6; margin-bottom: 16px;">
+                                            We are absolutely thrilled to have you join the SavannaCart family. Your account has been successfully created and you're just one step away from accessing our amazing e-commerce platform!
+                                        </p>
+                                        
+                                        <!-- User ID Box -->
+                                        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                                            <tr>
+                                                <td>
+                                                    <div class="user-id-box">
+                                                        <strong style="color: #2c3e50; font-size: 18px; font-family: 'Courier New', monospace;">
+                                                            🆔 Your User ID: {{.userID}}
+                                                        </strong>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        
+                                        <p style="color: #555555; font-size: 16px; line-height: 1.6; margin-bottom: 16px;">
+                                            To complete your registration and activate your account, please click the button below:
+                                        </p>
+                                        
+                                        <!-- CTA Button -->
+                                        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                                            <tr>
+                                                <td style="text-align: center; padding: 20px 0;">
+                                                    <a href="{{.activationURL}}" class="btn" style="background-color: #667eea; color: white; text-decoration: none; padding: 15px 30px; border-radius: 5px; font-weight: bold; display: inline-block;">
+                                                        🚀 Activate My Account
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        
+                                        <!-- Highlight Box -->
+                                        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                                            <tr>
+                                                <td>
+                                                    <div class="highlight-box">
+                                                        <strong>⚠️ Important:</strong> This is a <strong>one-time use</strong> activation token that will expire in <strong>3 days</strong>. Please activate your account as soon as possible.
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        
+                                        <p style="color: #555555; font-size: 16px; line-height: 1.6; margin-bottom: 16px;">
+                                            Once activated, you'll be able to:
+                                        </p>
+                                        
+                                        <ul style="color: #555555; font-size: 16px; line-height: 1.6; padding-left: 20px;">
+                                            <li>Browse our extensive product catalog</li>
+                                            <li>Add items to your cart and wishlist</li>
+                                            <li>Track your orders in real-time</li>
+                                            <li>Enjoy personalized recommendations</li>
+                                            <li>Access exclusive member deals</li>
+                                        </ul>
+                                        
+                                        <p style="color: #555555; font-size: 16px; line-height: 1.6; margin-bottom: 16px;">
+                                            If you have any questions or need assistance, our friendly support team is here to help!
+                                        </p>
+                                        
+                                        <p style="color: #555555; font-size: 16px; line-height: 1.6; margin-top: 30px;">
+                                            <strong>Happy Shopping!</strong><br>
+                                            The SavannaCart Team 🛒
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td>
+                            <table class="footer-table" role="presentation" border="0" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td style="padding: 25px; text-align: center;">
+                                        <p style="color: #6c757d; font-size: 14px; margin-bottom: 15px;">
+                                            Stay connected with SavannaCart:
+                                        </p>
+                                        
+                                        <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="margin: 0 auto;">
+                                            <tr>
+                                                <td style="padding: 0 5px;">
+                                                    <a href="https://twitter.com/SavannaCart" class="social-link" style="background-color: #667eea; color: white; text-decoration: none; padding: 8px; border-radius: 50%; display: inline-block;">
+                                                        📘
+                                                    </a>
+                                                </td>
+                                                <td style="padding: 0 5px;">
+                                                    <a href="https://facebook.com/SavannaCart" class="social-link" style="background-color: #667eea; color: white; text-decoration: none; padding: 8px; border-radius: 50%; display: inline-block;">
+                                                        📖
+                                                    </a>
+                                                </td>
+                                                <td style="padding: 0 5px;">
+                                                    <a href="https://instagram.com/SavannaCart" class="social-link" style="background-color: #667eea; color: white; text-decoration: none; padding: 8px; border-radius: 50%; display: inline-block;">
+                                                        📷
+                                                    </a>
+                                                </td>
+                                                <td style="padding: 0 5px;">
+                                                    <a href="https://linkedin.com/company/savannacart" class="social-link" style="background-color: #667eea; color: white; text-decoration: none; padding: 8px; border-radius: 50%; display: inline-block;">
+                                                        💼
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>
 {{ end }}
