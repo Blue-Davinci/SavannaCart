@@ -1,4 +1,4 @@
--- 006_create_table_order_items.sql
+-- +goose Up
 CREATE TABLE order_items (
     id SERIAL PRIMARY KEY,
     order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
