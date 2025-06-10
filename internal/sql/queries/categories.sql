@@ -6,7 +6,7 @@ INSERT INTO categories (
 RETURNING id, name, parent_id, version, created_at, updated_at;
 
 -- name: GetAllCategories :many
-SELECT
+SELECT count(*) OVER() AS total_count,
     id,
     name,
     parent_id,
@@ -14,7 +14,9 @@ SELECT
     created_at,
     updated_at
 FROM categories
-ORDER BY name;
+WHERE ($1 = '' OR to_tsvector('simple', name) @@ plainto_tsquery('simple', $1))
+ORDER BY name
+LIMIT $2 OFFSET $3;
 
 -- name: UpdateCategory :one
 UPDATE categories

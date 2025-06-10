@@ -25,6 +25,8 @@ func (app *application) routes() http.Handler {
 
 	// dynamic protected middleware
 	dynamicMiddleware := alice.New(app.requireAuthenticatedUser, app.requireActivatedUser)
+	// Permission Middleware, this will apply to specific routes that are capped by the permissions
+	adminPermissionMiddleware := alice.New(app.requirePermission("admin:read"))
 
 	// Apply the global middleware to the router
 	router.Use(globalMiddleware)
@@ -33,6 +35,8 @@ func (app *application) routes() http.Handler {
 
 	v1Router.Mount("/", app.generalRoutes())
 	v1Router.Mount("/api", app.apiKeyRoutes(&dynamicMiddleware))
+	// this is a hybrid route
+	v1Router.With(dynamicMiddleware.Then).Mount("/categories", app.categoryRoutes(&adminPermissionMiddleware))
 
 	// Mount the v1Router to the main base router
 	router.Mount("/v1", v1Router)
@@ -58,4 +62,13 @@ func (app *application) apiKeyRoutes(dynamicMiddleware *alice.Chain) chi.Router 
 	// lougput route only applies to people who are registered
 	apiKeyRoutes.With(dynamicMiddleware.Then).Post("/logout", app.logoutUserHandler)
 	return apiKeyRoutes
+}
+
+// category routes
+func (app *application) categoryRoutes(adminMIddleware *alice.Chain) chi.Router {
+	categoryRoutes := chi.NewRouter()
+	// Get all categories, open to everyone who is authenticated
+	categoryRoutes.Get("/", app.getAllCategoriesHandler)
+
+	return categoryRoutes
 }
