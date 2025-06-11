@@ -300,7 +300,7 @@ For detailed Kubernetes deployment instructions, see [K8S-DEPLOYMENT.md](K8S-DEP
 - [Go](https://golang.org/) - High-performance backend language
 - [Chi Router](https://github.com/go-chi/chi) - Lightweight, idiomatic HTTP router
 - [PostgreSQL](https://www.postgresql.org/) - Primary database with ACID compliance
-- [Redis](https://redis.io/) - Caching and session management
+- [Redis](https://redis.io/) - Caching and session management [Still uder dev]
 - [SQLC](https://sqlc.dev/) - Type-safe SQL query generation
 
 ### Authentication & Security
@@ -310,7 +310,7 @@ For detailed Kubernetes deployment instructions, see [K8S-DEPLOYMENT.md](K8S-DEP
 
 ### Notifications
 - [Twilio](https://www.twilio.com/) - SMS messaging service
-- [Gomail](https://pkg.go.dev/gopkg.in/gomail.v2) - Email notification system
+- [MailTrap](https://mailtrap.io/) - Email notification system
 
 ### DevOps & Deployment
 - [Docker](https://www.docker.com/) - Containerization platform
