@@ -20,7 +20,6 @@ const userContextKey = contextKey("user")
 // key.
 func (app *application) contextSetUser(r *http.Request, user *data.User) *http.Request {
 	ctx := context.WithValue(r.Context(), userContextKey, user)
-	//app.log.PrintInfo("set user in request context", map[string]string{"name": user.Name, "email": user.Email})
 	return r.WithContext(ctx)
 }
 

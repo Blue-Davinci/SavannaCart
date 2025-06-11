@@ -298,6 +298,7 @@ func (app *application) aunthenticatorHelper(r *http.Request) (*data.User, error
 	if len(headerParts) != 2 || headerParts[0] != "Bearer" {
 		return nil, ErrInvalidAuthentication
 	}
+	//app.logger.Info("Authentication header found", zap.String("header", authorizationHeader))
 	// Extract the actual authentication token from the header parts.
 	token := headerParts[1]
 	//app.logger.Info("User id Connected", zap.String("Connected ID", token))
@@ -309,6 +310,7 @@ func (app *application) aunthenticatorHelper(r *http.Request) (*data.User, error
 	if data.ValidateTokenPlaintext(v, token); !v.Valid() {
 		return nil, ErrInvalidAuthentication
 	}
+	//app.logger.Info("Authentication token validated", zap.String("token", token))
 	// Retrieve the details of the user associated with the authentication token,
 	// again calling the invalidAuthenticationTokenResponse() helper if no
 	// matching record was found. IMPORTANT: Notice that we are using
@@ -322,5 +324,6 @@ func (app *application) aunthenticatorHelper(r *http.Request) (*data.User, error
 			return nil, ErrInvalidAuthentication
 		}
 	}
+	//app.logger.Info("[Auth Helper] User authenticated", zap.Int64("user_id", user.ID), zap.String("email", user.Email))
 	return user, nil
 }

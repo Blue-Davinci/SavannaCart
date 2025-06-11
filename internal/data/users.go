@@ -337,9 +337,69 @@ func populateUser(userRow interface{}) *User {
 			UpdatedAt:        user.UpdatedAt,
 			LastLogin:        user.LastLogin,
 		}
-
+	case database.GetForTokenRow:
+		userPassword := password{
+			hash: user.Password,
+		}
+		return &User{
+			ID:               user.ID,
+			FirstName:        user.FirstName,
+			LastName:         user.LastName,
+			Email:            user.Email,
+			ProfileAvatarURL: user.ProfileAvatarUrl,
+			PhoneNumber:      user.PhoneNumber.String,
+			Password:         userPassword,
+			OIDCSubject:      user.OidcSub,
+			RoleLevel:        user.RoleLevel,
+			Activated:        user.Activated,
+			Version:          user.Version,
+			CreatedAt:        user.CreatedAt,
+			UpdatedAt:        user.UpdatedAt,
+			LastLogin:        user.LastLogin,
+		}
+	case database.GetUserByIDRow:
+		userPassword := password{
+			hash: user.Password,
+		}
+		return &User{
+			ID:               user.ID,
+			FirstName:        user.FirstName,
+			LastName:         user.LastName,
+			Email:            user.Email,
+			ProfileAvatarURL: user.ProfileAvatarUrl,
+			PhoneNumber:      user.PhoneNumber.String,
+			Password:         userPassword,
+			OIDCSubject:      user.OidcSub,
+			RoleLevel:        user.RoleLevel,
+			Activated:        user.Activated,
+			Version:          user.Version,
+			CreatedAt:        user.CreatedAt,
+			UpdatedAt:        user.UpdatedAt,
+			LastLogin:        user.LastLogin,
+		}
+	case database.GetUserByEmailRow:
+		userPassword := password{
+			hash: user.Password,
+		}
+		return &User{
+			ID:               user.ID,
+			FirstName:        user.FirstName,
+			LastName:         user.LastName,
+			Email:            user.Email,
+			ProfileAvatarURL: user.ProfileAvatarUrl,
+			PhoneNumber:      user.PhoneNumber.String,
+			Password:         userPassword,
+			OIDCSubject:      user.OidcSub,
+			RoleLevel:        user.RoleLevel,
+			Activated:        user.Activated,
+			Version:          user.Version,
+			CreatedAt:        user.CreatedAt,
+			UpdatedAt:        user.UpdatedAt,
+			LastLogin:        user.LastLogin,
+		}
 	// Default case: Returns nil if the input type does not match any supported types.
 	default:
-		return nil
+		// change to return an anonymous user instead of nil!
+		return AnonymousUser
 	}
 }
