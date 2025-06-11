@@ -8,16 +8,8 @@
 <div align="center">
 
 [![Status](https://img.shields.io/badge/status-active-success.svg)]()
-- 🏢 **Savannah Informatics** for the comprehensive assessment requirements
-- 🔐 **CoreOS OIDC Team** for excellent Go OpenID Connect integration tools
-- 📱 **Twilio** for reliable SMS API and developer-friendly documentation
-- 🗄️ **PostgreSQL Community** for robust recursive querying and JSON support
-- ☸️ **Kubernetes Community** for container orchestration excellence
-- 🐳 **Docker** for revolutionizing application containerization
-- 🔧 **Go Community** for building a fantastic ecosystem of tools and libraries
-
-Special thanks to all open-source contributors who made this project possible! 🙏itHub Issues](https://img.shields.io/github/issues/kylelobo/The-Documentation-Compendium.svg)](https://github.com/kylelobo/The-Documentation-Compendium/issues)
-[![GitHub Pull Requests](https://img.shields.io/github/issues-pr/kylelobo/The-Documentation-Compendium.svg)](https://github.com/kylelobo/The-Documentation-Compendium/pulls)
+[![GitHub Issues](https://img.shields.io/github/issues/Blue-Davinci/SavannaCart.svg)](https://github.com/Blue-Davinci/SavannaCart/issues)
+[![GitHub Pull Requests](https://img.shields.io/github/issues-pr/Blue-Davinci/SavannaCart.svg)](https://github.com/Blue-Davinci/SavannaCart/pulls)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](/LICENSE)
 
 </div>
