@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: savannacart
+      POSTGRES_USER: savannacart
+      POSTGRES_PASSWORD: pa55word
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./internal/sql/schema:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U savannacart -d savannacart"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # SavannaCart API
+  api:
+    build: .
+    ports:
+      - "4000:4000"
+    environment:
+      - SAVANNACART_DB_DSN=postgres://savannacart:pa55word@postgres:5432/savannacart?sslmode=disable
+      - SAVANNACART_OIDC_CLIENT_ID=${SAVANNACART_OIDC_CLIENT_ID}
+      - SAVANNACART_OIDC_CLIENT_SECRET=${SAVANNACART_OIDC_CLIENT_SECRET}
+      - SAVANNACART_SMTP_HOST=${SAVANNACART_SMTP_HOST}
+      - SAVANNACART_SMTP_USERNAME=${SAVANNACART_SMTP_USERNAME}
+      - SAVANNACART_SMTP_PASSWORD=${SAVANNACART_SMTP_PASSWORD}
+      - SAVANNACART_SMTP_SENDER=${SAVANNACART_SMTP_SENDER}
+      - SAVANNACART_SMS_ACCOUNT_SID=${SAVANNACART_SMS_ACCOUNT_SID}
+      - SAVANNACART_SMS_AUTH_TOKEN=${SAVANNACART_SMS_AUTH_TOKEN}
+      - SAVANNACART_SMS_FROM_NUMBER=${SAVANNACART_SMS_FROM_NUMBER}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4000/v1/api/healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  postgres_data:
