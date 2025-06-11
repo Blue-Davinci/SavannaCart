@@ -24,7 +24,7 @@ import (
 )
 
 var (
-	version = "0.1.0"
+	version = "0.1.3"
 )
 
 type config struct {
@@ -138,6 +138,24 @@ func main() {
 	// Parse the flags
 	flag.Parse()
 
+	// Construct DSN from individual components if not provided directly
+	if cfg.db.dsn == "" {
+		dbUser := getEnvDefault("DB_USER", "savannacart")
+		dbPassword := getEnvDefault("DB_PASSWORD", "pa55word")
+		dbHost := getEnvDefault("DB_HOST", "localhost")
+		dbPort := getEnvDefault("DB_PORT", "5432")
+		dbName := getEnvDefault("DB_NAME", "savannacart")
+		dbSSLMode := getEnvDefault("DB_SSLMODE", "disable")
+
+		cfg.db.dsn = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
+			dbUser, dbPassword, dbHost, dbPort, dbName, dbSSLMode)
+
+		logger.Info("Constructed DSN from individual components",
+			zap.String("host", dbHost),
+			zap.String("port", dbPort),
+			zap.String("database", dbName))
+	}
+
 	// Load additional configuration from environment variables
 	loadConfig(&cfg)
 
@@ -189,18 +207,26 @@ func publishMetrics() {
 
 // getCurrentPath invokes getEnvPath to get the path to the .env file based on the current working directory.
 // After that it loads the .env file using godotenv.Load to be used by the initFlags() function
+// In containerized environments, .env file is optional as environment variables are provided directly
 func getCurrentPath(logger *zap.Logger) string {
 	currentpath := getEnvPath(logger)
 	if currentpath != "" {
 		err := godotenv.Load(currentpath)
 		if err != nil {
-			logger.Fatal(err.Error(), zap.String("path", currentpath))
+			// Don't fatal error in production/container environments - just log a warning
+			if os.Getenv("ENV") == "production" || os.Getenv("KUBERNETES_SERVICE_HOST") != "" {
+				logger.Warn("Could not load .env file, using environment variables directly",
+					zap.String("path", currentpath),
+					zap.Error(err))
+			} else {
+				logger.Fatal(err.Error(), zap.String("path", currentpath))
+			}
+		} else {
+			logger.Info("Successfully loaded .env file", zap.String("path", currentpath))
 		}
 	} else {
-
-		logger.Error("Path Error", zap.String("path", currentpath), zap.String("error", "unable to load .env file"))
+		logger.Warn("No .env file path found, using environment variables directly")
 	}
-	logger.Info("Loading Environment Variables", zap.String("path", currentpath))
 	return currentpath
 }
 
