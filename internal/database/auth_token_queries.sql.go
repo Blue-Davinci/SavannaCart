@@ -7,6 +7,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"time"
 )
 
@@ -58,6 +59,7 @@ SELECT
     users.email,
     users.profile_avatar_url,
     users.password,
+    users.phone_number,
     users.oidc_sub,
     users.role_level,
     users.activated,
@@ -86,6 +88,7 @@ type GetForTokenRow struct {
 	Email            string
 	ProfileAvatarUrl string
 	Password         []byte
+	PhoneNumber      sql.NullString
 	OidcSub          string
 	RoleLevel        string
 	Activated        bool
@@ -105,6 +108,7 @@ func (q *Queries) GetForToken(ctx context.Context, arg GetForTokenParams) (GetFo
 		&i.Email,
 		&i.ProfileAvatarUrl,
 		&i.Password,
+		&i.PhoneNumber,
 		&i.OidcSub,
 		&i.RoleLevel,
 		&i.Activated,

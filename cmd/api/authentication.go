@@ -88,6 +88,66 @@ func (app *application) logoutUserHandler(w http.ResponseWriter, r *http.Request
 	}
 }
 
+func (app *application) updateUserInfo(w http.ResponseWriter, r *http.Request) {
+
+	// For now, we will only allow phone_number updates
+	var input struct {
+		PhoneNumber *string `json:"phone_number"`
+	}
+	err := app.readJSON(w, r, &input)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+	app.logger.Info("Updating user information",
+		zap.Int64("user_id", int64(app.contextGetUser(r).ID)),
+		zap.String("email", app.contextGetUser(r).PhoneNumber))
+
+	// get user  by the current context id
+	user, err := app.models.Users.GetUserByID(int64(app.contextGetUser(r).ID))
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrGeneralRecordNotFound):
+			app.notFoundResponse(w, r)
+			return
+		default:
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+	}
+	// check if phone number has been updated
+	if input.PhoneNumber != nil {
+		// If the phone number is provided, update it
+		user.PhoneNumber = *input.PhoneNumber
+	}
+	// Validate the updated user data
+	v := validator.New()
+	data.ValidateUser(v, user)
+	if !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	// Save the updated user record in our database
+	err = app.models.Users.UpdateUser(user)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrEditConflict):
+			app.editConflictResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	// Return the updated user information as a JSON response
+	err = app.writeJSON(w, http.StatusOK, envelope{"user": user}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+
+}
+
 // activateUserHandler() Handles activating a user. Inactive users cannot perform a multitude
 // of functions. This handler accepts a JSON request containing a plaintext activation token
 // and activates the user associated with the token & the activate scope if that token exists.

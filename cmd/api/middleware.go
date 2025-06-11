@@ -12,6 +12,7 @@ import (
 	"github.com/Blue-Davinci/SavannaCart/internal/data"
 	"github.com/felixge/httpsnoop"
 	"github.com/tomasen/realip"
+	"go.uber.org/zap"
 	"golang.org/x/time/rate"
 )
 
@@ -67,6 +68,7 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 		}
 		// Call the contextSetUser() helper to add the user information to the request
 		// context.
+		app.logger.Info("user authenticated", zap.String("name", user.FirstName), zap.String("email", user.Email))
 		r = app.contextSetUser(r, user)
 		// Call the next handler in the chain.
 		next.ServeHTTP(w, r)
@@ -79,6 +81,7 @@ func (app *application) requireAuthenticatedUser(next http.Handler) http.Handler
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Use the contextGetUser() helper to retrieve the user
 		// information from the request context.
+		app.logger.Debug("requireAuthenticatedUser middleware called")
 		user := app.contextGetUser(r)
 		// If the user is anonymous, then call the authenticationRequiredResponse() to
 		// inform the client that they should authenticate before trying again.
