@@ -173,3 +173,51 @@ func (q *Queries) GetProductById(ctx context.Context, arg GetProductByIdParams) 
 	)
 	return i, err
 }
+
+const getProductByIdOnly = `-- name: GetProductByIdOnly :one
+SELECT
+    id,
+    name,
+    price_kes,
+    category_id,
+    description,
+    stock_quantity,
+    version,
+    created_at,
+    updated_at
+FROM products
+WHERE id = $1
+`
+
+func (q *Queries) GetProductByIdOnly(ctx context.Context, id int32) (Product, error) {
+	row := q.db.QueryRowContext(ctx, getProductByIdOnly, id)
+	var i Product
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.PriceKes,
+		&i.CategoryID,
+		&i.Description,
+		&i.StockQuantity,
+		&i.Version,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const updateProductStockQuantity = `-- name: UpdateProductStockQuantity :exec
+UPDATE products
+SET stock_quantity = $2, updated_at = NOW()
+WHERE id = $1
+`
+
+type UpdateProductStockQuantityParams struct {
+	ID            int32
+	StockQuantity int32
+}
+
+func (q *Queries) UpdateProductStockQuantity(ctx context.Context, arg UpdateProductStockQuantityParams) error {
+	_, err := q.db.ExecContext(ctx, updateProductStockQuantity, arg.ID, arg.StockQuantity)
+	return err
+}

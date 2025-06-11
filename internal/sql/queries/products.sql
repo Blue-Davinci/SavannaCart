@@ -44,3 +44,22 @@ SELECT
 FROM products
 WHERE id = $1 AND version = $2;
 
+-- name: GetProductByIdOnly :one
+SELECT
+    id,
+    name,
+    price_kes,
+    category_id,
+    description,
+    stock_quantity,
+    version,
+    created_at,
+    updated_at
+FROM products
+WHERE id = $1;
+
+-- name: UpdateProductStockQuantity :exec
+UPDATE products
+SET stock_quantity = $2, updated_at = NOW()
+WHERE id = $1;
+

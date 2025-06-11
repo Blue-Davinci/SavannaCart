@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Update - SavannaCart</title>
+    <!--[if mso]>
+    <noscript>
+        <xml>
+            <o:OfficeDocumentSettings>
+                <o:PixelsPerInch>96</o:PixelsPerInch>
+            </o:OfficeDocumentSettings>
+        </xml>
+    </noscript>
+    <![endif]-->
+    <style>
+        /* Reset styles */
+        body, table, td, p, a, li, blockquote {
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+        }
+        table, td {
+            mso-table-lspace: 0pt;
+            mso-table-rspace: 0pt;
+        }
+        img {
+            -ms-interpolation-mode: bicubic;
+            border: 0;
+            height: auto;
+            line-height: 100%;
+            outline: none;
+            text-decoration: none;
+        }
+        
+        /* Email client specific styles */
+        .ReadMsgBody { width: 100%; }
+        .ExternalClass { width: 100%; }
+        .ExternalClass, .ExternalClass p, .ExternalClass span, .ExternalClass font, .ExternalClass td, .ExternalClass div {
+            line-height: 100%;
+        }
+        
+        /* Main styles */
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100% !important;
+            min-width: 100%;
+            background-color: #f4f4f4;
+            font-family: Arial, sans-serif;
+        }
+        
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+        }
+        
+        .header-section {
+            background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+            background-color: #00b894; /* Fallback */
+            text-align: center;
+            padding: 30px 20px;
+        }
+        
+        .header-section img {
+            max-width: 240px;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+        
+        .content-section {
+            padding: 40px 30px;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+            text-transform: uppercase;
+            margin: 10px 0;
+        }
+        
+        .status-processing {
+            background-color: #74b9ff;
+            color: #ffffff;
+        }
+        
+        .status-shipped {
+            background-color: #fd79a8;
+            color: #ffffff;
+        }
+        
+        .status-delivered {
+            background-color: #00b894;
+            color: #ffffff;
+        }
+        
+        .status-cancelled {
+            background-color: #e17055;
+            color: #ffffff;
+        }
+        
+        .status-placed {
+            background-color: #fdcb6e;
+            color: #2d3436;
+        }
+        
+        .order-header {
+            background-color: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .order-id {
+            color: #2d3436;
+            font-size: 24px;
+            font-weight: bold;
+            margin: 0 0 10px 0;
+        }
+        
+        .order-status {
+            margin: 15px 0;
+        }
+        
+        .order-total {
+            color: #00b894;
+            font-size: 20px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .order-date {
+            color: #636e72;
+            font-size: 14px;
+            margin: 5px 0;
+        }
+        
+        .status-message {
+            background-color: #e8f4fd;
+            border-left: 4px solid #74b9ff;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .status-message.processing {
+            background-color: #e8f4fd;
+            border-color: #74b9ff;
+        }
+        
+        .status-message.shipped {
+            background-color: #fce8f3;
+            border-color: #fd79a8;
+        }
+        
+        .status-message.delivered {
+            background-color: #e8f6f3;
+            border-color: #00b894;
+        }
+        
+        .status-message.cancelled {
+            background-color: #faf2f0;
+            border-color: #e17055;
+        }
+        
+        .status-icon {
+            font-size: 24px;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        
+        .items-section {
+            margin: 30px 0;
+        }
+        
+        .items-header {
+            color: #2d3436;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #dee2e6;
+        }
+        
+        .item-row {
+            border-bottom: 1px solid #e9ecef;
+            padding: 15px 0;
+        }
+        
+        .item-row:last-child {
+            border-bottom: none;
+        }
+        
+        .item-name {
+            color: #2d3436;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .item-details {
+            color: #636e72;
+            font-size: 14px;
+        }
+        
+        .item-price {
+            color: #00b894;
+            font-weight: bold;
+            float: right;
+        }
+        
+        .tracking-section {
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+            background-color: #74b9ff; /* Fallback */
+            color: #ffffff;
+            text-align: center;
+            padding: 25px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .tracking-button {
+            background-color: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 25px;
+            color: #ffffff;
+            display: inline-block;
+            font-size: 16px;
+            font-weight: bold;
+            padding: 12px 25px;
+            text-decoration: none;
+            margin: 10px 0;
+        }
+        
+        .support-section {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .support-text {
+            color: #636e72;
+            font-size: 14px;
+            margin: 0;
+        }
+        
+        .footer-section {
+            background: linear-gradient(135deg, #2d3436 0%, #636e72 100%);
+            background-color: #2d3436; /* Fallback */
+            color: #ffffff;
+            text-align: center;
+            padding: 25px;
+        }
+        
+        .footer-text {
+            color: #b2bec3;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        
+        .social-links {
+            text-align: center;
+            margin-top: 15px;
+        }
+        
+        .social-link {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            background-color: #00b894;
+            border-radius: 50%;
+            margin: 0 5px;
+            text-decoration: none;
+            vertical-align: middle;
+        }
+        
+        .social-link img {
+            width: 20px;
+            height: 20px;
+            margin: 10px;
+        }
+        
+        /* Mobile styles */
+        @media only screen and (max-width: 600px) {
+            .email-container {
+                width: 100% !important;
+                margin: 0 !important;
+            }
+            
+            .content-section {
+                padding: 25px 20px !important;
+            }
+            
+            .order-header {
+                padding: 15px !important;
+            }
+            
+            .order-id {
+                font-size: 20px !important;
+            }
+            
+            .item-price {
+                float: none !important;
+                display: block !important;
+                margin-top: 5px !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+        <tr>
+            <td align="center" style="background-color: #f4f4f4; padding: 20px 0;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" class="email-container" width="600">
+                    
+                    <!-- Header Section -->
+                    <tr>
+                        <td class="header-section">
+                            <img src="https://i.ibb.co/Rpq9Tvwy/savanna-cart-high-resolution-logo-photoaidcom-cropped.png" alt="SavannaCart Logo" style="max-width: 240px; height: auto;">
+                        </td>
+                    </tr>
+                    
+                    <!-- Content Section -->
+                    <tr>
+                        <td class="content-section">
+                            <h1 style="color: #2d3436; font-size: 24px; text-align: center; margin-bottom: 20px;">
+                                Hi {{.firstName}} {{.lastName}}! 👋
+                            </h1>
+                            
+                            <p style="color: #636e72; font-size: 16px; text-align: center; margin-bottom: 25px;">
+                                We have an exciting update about your recent order:
+                            </p>
+                            
+                            <!-- Order Header -->
+                            <div class="order-header">
+                                <div class="order-id">Order #{{.orderID}}</div>
+                                <div class="order-status">
+                                    <span class="status-badge status-{{.status | lower}}">{{.status}}</span>
+                                </div>
+                                <div class="order-total">Total: KES {{.totalAmount}}</div>
+                                <div class="order-date">Ordered on {{.orderDate}}</div>
+                            </div>
+                            
+                            <!-- Status Message -->
+                            {{if eq .status "PROCESSING"}}
+                            <div class="status-message processing">
+                                <span class="status-icon">🔄</span>
+                                <strong>Good news!</strong> Your order is being carefully prepared by our team. We're getting everything ready for shipment and you'll receive another update once it's on its way.
+                            </div>
+                            {{end}}
+                            
+                            {{if eq .status "SHIPPED"}}
+                            <div class="status-message shipped">
+                                <span class="status-icon">🚚</span>
+                                <strong>Your order is on its way!</strong> Your package has left our warehouse and is heading to your delivery address. Keep an eye out for delivery updates.
+                            </div>
+                            <!-- Tracking Section -->
+                            <div class="tracking-section">
+                                <h3 style="color: #ffffff; margin: 0 0 10px 0;">Track Your Package</h3>
+                                <p style="color: #ffffff; margin: 0 0 15px 0; opacity: 0.9;">Stay updated on your delivery progress</p>
+                                {{if .trackingURL}}
+                                <a href="{{.trackingURL}}" class="tracking-button">📦 Track Package</a>
+                                {{end}}
+                            </div>
+                            {{end}}
+                            
+                            {{if eq .status "DELIVERED"}}
+                            <div class="status-message delivered">
+                                <span class="status-icon">✅</span>
+                                <strong>Delivery Complete!</strong> Your order has been successfully delivered. We hope you love your purchase! Don't forget to leave a review and let us know how we did.
+                            </div>
+                            {{end}}
+                            
+                            {{if eq .status "CANCELLED"}}
+                            <div class="status-message cancelled">
+                                <span class="status-icon">❌</span>
+                                <strong>Order Cancelled:</strong> Your order has been cancelled as requested. If this was unexpected or you have questions, please don't hesitate to contact our support team.
+                            </div>
+                            {{end}}
+                            
+                            <!-- Order Items -->
+                            <div class="items-section">
+                                <div class="items-header">📦 Order Items</div>
+                                {{range .items}}
+                                <div class="item-row">
+                                    <div class="item-name">{{.productName}}</div>
+                                    <div class="item-details">
+                                        Quantity: {{.quantity}}
+                                        <span class="item-price">KES {{.unitPrice}}</span>
+                                    </div>
+                                </div>
+                                {{end}}
+                            </div>
+                            
+                            <!-- Support Section -->
+                            <div class="support-section">
+                                <p class="support-text">
+                                    <strong>Need Help?</strong> Our customer support team is available 24/7 to assist you with any questions about your order.
+                                </p>
+                            </div>
+                            
+                            <p style="color: #636e72; font-size: 16px; text-align: center; margin-top: 30px;">
+                                Thank you for choosing SavannaCart! 🛒<br>
+                                <strong>The SavannaCart Team</strong>
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer Section -->
+                    <tr>
+                        <td class="footer-section">
+                            <p class="footer-text">Stay connected with SavannaCart for the latest updates:</p>
+                            <div class="social-links">
+                                <a href="https://twitter.com/SavannaCart" class="social-link">
+                                    <img src="https://img.icons8.com/ios-filled/50/ffffff/twitter.png" alt="Twitter">
+                                </a>
+                                <a href="https://facebook.com/SavannaCart" class="social-link">
+                                    <img src="https://img.icons8.com/ios-filled/50/ffffff/facebook-new.png" alt="Facebook">
+                                </a>
+                                <a href="https://instagram.com/SavannaCart" class="social-link">
+                                    <img src="https://img.icons8.com/ios-filled/50/ffffff/instagram-new.png" alt="Instagram">
+                                </a>
+                                <a href="https://linkedin.com/company/savannacart" class="social-link">
+                                    <img src="https://img.icons8.com/ios-filled/50/ffffff/linkedin.png" alt="LinkedIn">
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
