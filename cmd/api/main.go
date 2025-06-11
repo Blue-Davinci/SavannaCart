@@ -11,11 +11,11 @@ import (
 	"strings"
 	"sync"
 	"time"
-
 	"github.com/Blue-Davinci/SavannaCart/internal/data"
 	"github.com/Blue-Davinci/SavannaCart/internal/database"
 	"github.com/Blue-Davinci/SavannaCart/internal/logger"
 	"github.com/Blue-Davinci/SavannaCart/internal/mailer"
+	"github.com/Blue-Davinci/SavannaCart/internal/sms"
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
@@ -62,6 +62,11 @@ type config struct {
 		password string
 		sender   string
 	}
+	sms struct {
+		accountSID string
+		authToken  string
+		fromNumber string
+	}
 	limiter struct {
 		rps     float64
 		burst   int
@@ -76,6 +81,7 @@ type application struct {
 	models data.Models
 	wg     sync.WaitGroup
 	mailer mailer.Mailer
+	sms    *sms.SMSService
 }
 
 func main() {
@@ -113,6 +119,10 @@ func main() {
 	flag.StringVar(&cfg.smtp.username, "smtp-username", os.Getenv("SAVANNACART_SMTP_USERNAME"), "SMTP server username")
 	flag.StringVar(&cfg.smtp.password, "smtp-password", os.Getenv("SAVANNACART_SMTP_PASSWORD"), "SMTP server password")
 	flag.StringVar(&cfg.smtp.sender, "smtp-sender", os.Getenv("SAVANNACART_SMTP_SENDER"), "SMTP sender email address")
+	// SMS configuration
+	flag.StringVar(&cfg.sms.accountSID, "sms-account-sid", os.Getenv("SAVANNACART_SMS_ACCOUNT_SID"), "Twilio SMS Account SID")
+	flag.StringVar(&cfg.sms.authToken, "sms-auth-token", os.Getenv("SAVANNACART_SMS_AUTH_TOKEN"), "Twilio SMS Auth Token")
+	flag.StringVar(&cfg.sms.fromNumber, "sms-from-number", os.Getenv("SAVANNACART_SMS_FROM_NUMBER"), "Twilio SMS From Number")
 	// Rate limiter flags
 	flag.Float64Var(&cfg.limiter.rps, "limiter-rps", 5, "Rate limiter maximum requests per second")
 	flag.IntVar(&cfg.limiter.burst, "limiter-burst", 10, "Rate limiter maximum burst")
@@ -137,13 +147,13 @@ func main() {
 	}
 	// Init our exp metrics variables for server metrics.
 	publishMetrics()
-
 	app := &application{
 		config: cfg,
 		logger: logger,
 		models: data.NewModels(db),
 		mailer: mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.password, cfg.smtp.sender),
-	} // Initialize OIDC at startup
+		sms:    sms.New(cfg.sms.accountSID, cfg.sms.authToken, cfg.sms.fromNumber, logger),
+	}// Initialize OIDC at startup
 	err = app.InitOIDC()
 	if err != nil {
 		logger.Fatal("Failed to initialize OIDC", zap.Error(err))

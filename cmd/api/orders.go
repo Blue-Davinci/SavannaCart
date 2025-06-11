@@ -235,13 +235,15 @@ func (app *application) createOrderHandler(w http.ResponseWriter, r *http.Reques
 	app.background(func() {
 		app.sendOrderConfirmationEmail(order.ID)
 	})
-
 	// Send admin order notification email in background
 	app.background(func() {
 		app.sendAdminOrderNotification(order.ID)
 	})
 
-	// TODO: Send SMS notification to user
+	// Send SMS notification to user in background
+	app.background(func() {
+		app.sendOrderConfirmationSMS(order.ID)
+	})
 
 	err = app.writeJSON(w, http.StatusCreated, envelope{"order": order}, nil)
 	if err != nil {
@@ -535,4 +537,63 @@ func (app *application) sendAdminOrderNotification(orderID int32) {
 		zap.Int("total_admins", len(adminEmails)),
 		zap.Int("success_count", successCount),
 		zap.Int("failure_count", failureCount))
+}
+
+// sendOrderConfirmationSMS sends a simple confirmation SMS to the user when a new order is created
+func (app *application) sendOrderConfirmationSMS(orderID int32) {
+	// Get full order details with items
+	fullOrder, err := app.models.Orders.GetOrderWithItems(orderID)
+	if err != nil {
+		app.logger.Error("Failed to get order details for SMS confirmation",
+			zap.Int32("order_id", orderID),
+			zap.Error(err))
+		return
+	}
+
+	// Get user details using the UserID from the order
+	user, err := app.models.Users.GetUserByID(int64(fullOrder.UserID))
+	if err != nil {
+		app.logger.Error("Failed to get user details for SMS confirmation",
+			zap.Int32("order_id", orderID),
+			zap.Int32("user_id", fullOrder.UserID),
+			zap.Error(err))
+		return
+	}
+
+	// Check if user has a phone number
+	if user.PhoneNumber == "" {
+		app.logger.Info("User has no phone number, skipping SMS confirmation",
+			zap.Int32("order_id", orderID),
+			zap.Int32("user_id", fullOrder.UserID))
+		return
+	}
+
+	// Check if SMS service is enabled
+	if !app.sms.IsEnabled() {
+		app.logger.Info("SMS service is disabled, skipping SMS confirmation",
+			zap.Int32("order_id", orderID))
+		return
+	}
+
+	// Send SMS confirmation
+	err = app.sms.SendOrderConfirmation(user.PhoneNumber, fullOrder.ID, fullOrder.TotalKES.StringFixed(2))
+	if err != nil {
+		// Check if it's a trial account limitation and log appropriately
+		if strings.Contains(err.Error(), "Trial accounts") || strings.Contains(err.Error(), "restricted") {
+			app.logger.Info("SMS sending restricted due to trial account limitations",
+				zap.String("phone_number", user.PhoneNumber),
+				zap.Int32("order_id", fullOrder.ID),
+				zap.String("solution", "Verify phone number in Twilio console or upgrade account"))
+		} else {
+			app.logger.Error("Error sending order confirmation SMS",
+				zap.String("phone_number", user.PhoneNumber),
+				zap.Int32("order_id", fullOrder.ID),
+				zap.Error(err))
+		}
+		return
+	}
+
+	app.logger.Info("Order confirmation SMS sent successfully",
+		zap.String("phone_number", user.PhoneNumber),
+		zap.Int32("order_id", fullOrder.ID))
 }
