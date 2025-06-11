@@ -218,3 +218,36 @@ func (app *application) updateCategoryHandler(w http.ResponseWriter, r *http.Req
 	}
 
 }
+
+// getCategoryAveragePriceHandler handles the request to get the average price of products in a category and its children.
+// It expects the category ID to be provided in the URL as a path parameter.
+func (app *application) getCategoryAveragePriceHandler(w http.ResponseWriter, r *http.Request) {
+	// get id from url
+	categoryID, err := app.readIDParam(r, "categoryID")
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+	// validate the category ID
+	v := validator.New()
+	if data.ValidateURLID(v, categoryID, "categoryID"); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+	// get the average price from the database
+	categoryAverage, err := app.models.Categories.GetCategoryAveragePrice(int32(categoryID))
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrGeneralRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+	// Return the category average price as a JSON response.
+	err = app.writeJSON(w, http.StatusOK, envelope{"category_average": categoryAverage}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}

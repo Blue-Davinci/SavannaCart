@@ -111,6 +111,37 @@ func (q *Queries) GetAllCategories(ctx context.Context, arg GetAllCategoriesPara
 	return items, nil
 }
 
+const getCategoryAveragePrice = `-- name: GetCategoryAveragePrice :one
+WITH RECURSIVE category_tree AS (
+    -- Base case: start with the given category
+    SELECT c.id FROM categories c WHERE c.id = $1
+    
+    UNION ALL
+    
+    -- Recursive case: get all child categories
+    SELECT c.id
+    FROM categories c
+    INNER JOIN category_tree ct ON c.parent_id = ct.id
+)
+SELECT 
+    COALESCE(AVG(p.price_kes), 0)::text as average_price,
+    COUNT(p.id) as product_count
+FROM category_tree ct
+LEFT JOIN products p ON p.category_id = ct.id
+`
+
+type GetCategoryAveragePriceRow struct {
+	AveragePrice string
+	ProductCount int64
+}
+
+func (q *Queries) GetCategoryAveragePrice(ctx context.Context, id int32) (GetCategoryAveragePriceRow, error) {
+	row := q.db.QueryRowContext(ctx, getCategoryAveragePrice, id)
+	var i GetCategoryAveragePriceRow
+	err := row.Scan(&i.AveragePrice, &i.ProductCount)
+	return i, err
+}
+
 const getCategoryById = `-- name: GetCategoryById :one
 SELECT
     id,

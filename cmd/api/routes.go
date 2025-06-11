@@ -71,6 +71,9 @@ func (app *application) categoryRoutes(adminMIddleware *alice.Chain) chi.Router 
 	// Get all categories, open to everyone who is authenticated
 	categoryRoutes.Get("/", app.getAllCategoriesHandler)
 
+	// Get category average price, open to everyone who is authenticated
+	categoryRoutes.Get("/{categoryID:[0-9]+}", app.getCategoryAveragePriceHandler)
+
 	// Admin only routes
 	categoryRoutes.With(adminMIddleware.Then).Post("/", app.createNewCategoryHandler)
 	categoryRoutes.With(adminMIddleware.Then).Patch("/{categoryID:[0-9]+}/{versionID:[0-9]+}", app.updateCategoryHandler)
