@@ -338,12 +338,11 @@
                             <p style="color: #636e72; font-size: 16px; text-align: center; margin-bottom: 25px;">
                                 We have an exciting update about your recent order:
                             </p>
-                            
-                            <!-- Order Header -->
+                              <!-- Order Header -->
                             <div class="order-header">
                                 <div class="order-id">Order #{{.orderID}}</div>
                                 <div class="order-status">
-                                    <span class="status-badge status-{{.status | lower}}">{{.status}}</span>
+                                    <span class="status-badge status-{{.statusLower}}">{{.status}}</span>
                                 </div>
                                 <div class="order-total">Total: KES {{.totalAmount}}</div>
                                 <div class="order-date">Ordered on {{.orderDate}}</div>
