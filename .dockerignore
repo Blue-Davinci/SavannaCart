@@ -1,0 +1,37 @@
+# Docker ignore file
+.git
+.github
+.gitignore
+README.md
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Build artifacts
+bin/
+*.exe
+
+# Development files
+.env
+.env.*
+
+# IDE files
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Test files
+*_test.go
+test/
+
+# Documentation
+docs/
+*.md
+
+# Postman collection (not needed in container)
+postman_collection/
+
+# Helper scripts
+sms_help.go

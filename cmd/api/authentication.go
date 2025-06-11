@@ -256,6 +256,19 @@ func (app *application) activateUserHandler(w http.ResponseWriter, r *http.Reque
 	}
 }
 
+// simple API Health check route
+func (app *application) healthCheckHandler(w http.ResponseWriter, r *http.Request) {
+	// Write a simple JSON response to indicate the API is healthy
+	response := envelope{"status": "API is healthy"}
+	err := app.writeJSON(w, http.StatusOK, response, nil)
+	if err != nil {
+		app.logger.Error("Error writing health check response", zap.Error(err))
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+	app.logger.Info("Health check successful")
+}
+
 // createAuthenticationApiKeyHandler is our main authentication endpoint handler and the hitpoint for tha auth callback
 // It will handle the OAuth2.0 flow, including redirecting to the provider, handling the callback, and generating API keys.
 // It will also handle the creation of API keys for authenticated users.

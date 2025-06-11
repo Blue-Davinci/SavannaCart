@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+
 	"github.com/Blue-Davinci/SavannaCart/internal/data"
 	"github.com/Blue-Davinci/SavannaCart/internal/database"
 	"github.com/Blue-Davinci/SavannaCart/internal/logger"
@@ -153,7 +154,7 @@ func main() {
 		models: data.NewModels(db),
 		mailer: mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.password, cfg.smtp.sender),
 		sms:    sms.New(cfg.sms.accountSID, cfg.sms.authToken, cfg.sms.fromNumber, logger),
-	}// Initialize OIDC at startup
+	} // Initialize OIDC at startup
 	err = app.InitOIDC()
 	if err != nil {
 		logger.Fatal("Failed to initialize OIDC", zap.Error(err))

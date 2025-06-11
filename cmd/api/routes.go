@@ -60,6 +60,7 @@ func (app *application) apiKeyRoutes(dynamicMiddleware *alice.Chain) chi.Router 
 	// OAuth callback endpoint - must be GET since Google redirects with GET
 	apiKeyRoutes.Get("/authentication", app.createAuthenticationApiKeyHandler)
 	apiKeyRoutes.Put("/activation", app.activateUserHandler)
+	apiKeyRoutes.Get("/healthcheck", app.healthCheckHandler)
 
 	// updateUserInfo
 	apiKeyRoutes.With(dynamicMiddleware.Then).Patch("/user", app.updateUserInfo)
