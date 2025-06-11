@@ -8,6 +8,7 @@ import (
 
 var (
 	ErrGeneralRecordNotFound = errors.New("record not found")
+	ErrEditConflict          = errors.New("edit conflict")
 )
 
 type Models struct {
@@ -16,6 +17,7 @@ type Models struct {
 	Permissions PermissionModel
 	Categories  CategoryModel
 	Products    ProductModel
+	Orders      OrderModel
 }
 
 func NewModels(db *database.Queries) Models {
@@ -25,5 +27,6 @@ func NewModels(db *database.Queries) Models {
 		Permissions: PermissionModel{DB: db},
 		Categories:  CategoryModel{DB: db},
 		Products:    ProductModel{DB: db},
+		Orders:      OrderModel{DB: db},
 	}
 }

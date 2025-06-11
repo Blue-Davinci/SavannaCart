@@ -79,9 +79,25 @@ type GetForTokenParams struct {
 	Expiry time.Time
 }
 
-func (q *Queries) GetForToken(ctx context.Context, arg GetForTokenParams) (User, error) {
+type GetForTokenRow struct {
+	ID               int64
+	FirstName        string
+	LastName         string
+	Email            string
+	ProfileAvatarUrl string
+	Password         []byte
+	OidcSub          string
+	RoleLevel        string
+	Activated        bool
+	Version          int32
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
+	LastLogin        time.Time
+}
+
+func (q *Queries) GetForToken(ctx context.Context, arg GetForTokenParams) (GetForTokenRow, error) {
 	row := q.db.QueryRowContext(ctx, getForToken, arg.Hash, arg.Scope, arg.Expiry)
-	var i User
+	var i GetForTokenRow
 	err := row.Scan(
 		&i.ID,
 		&i.FirstName,

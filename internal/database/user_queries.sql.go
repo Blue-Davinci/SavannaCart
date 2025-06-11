@@ -7,6 +7,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"time"
 )
 
@@ -16,9 +17,10 @@ INSERT INTO users (
     last_name,
     email,
     profile_avatar_url,
+    phone_number,
     password,
     oidc_sub
-) VALUES ($1, $2, $3, $4, $5, $6)
+) VALUES ($1, $2, $3, $4, $5, $6, $7)
  RETURNING id, role_level,activated, version, created_at, updated_at, last_login
 `
 
@@ -27,6 +29,7 @@ type CreateNewUserParams struct {
 	LastName         string
 	Email            string
 	ProfileAvatarUrl string
+	PhoneNumber      sql.NullString
 	Password         []byte
 	OidcSub          string
 }
@@ -47,6 +50,7 @@ func (q *Queries) CreateNewUser(ctx context.Context, arg CreateNewUserParams) (C
 		arg.LastName,
 		arg.Email,
 		arg.ProfileAvatarUrl,
+		arg.PhoneNumber,
 		arg.Password,
 		arg.OidcSub,
 	)
@@ -70,6 +74,7 @@ SELECT
     last_name,
     email,
     profile_avatar_url,
+    phone_number,
     password,
     oidc_sub,
     role_level,
@@ -82,15 +87,92 @@ FROM users
 WHERE email = $1
 `
 
-func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
+type GetUserByEmailRow struct {
+	ID               int64
+	FirstName        string
+	LastName         string
+	Email            string
+	ProfileAvatarUrl string
+	PhoneNumber      sql.NullString
+	Password         []byte
+	OidcSub          string
+	RoleLevel        string
+	Activated        bool
+	Version          int32
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
+	LastLogin        time.Time
+}
+
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEmailRow, error) {
 	row := q.db.QueryRowContext(ctx, getUserByEmail, email)
-	var i User
+	var i GetUserByEmailRow
 	err := row.Scan(
 		&i.ID,
 		&i.FirstName,
 		&i.LastName,
 		&i.Email,
 		&i.ProfileAvatarUrl,
+		&i.PhoneNumber,
+		&i.Password,
+		&i.OidcSub,
+		&i.RoleLevel,
+		&i.Activated,
+		&i.Version,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.LastLogin,
+	)
+	return i, err
+}
+
+const getUserByID = `-- name: GetUserByID :one
+SELECT
+    id,
+    first_name,
+    last_name,
+    email,
+    profile_avatar_url,
+    phone_number,
+    password,
+    oidc_sub,
+    role_level,
+    activated,
+    version,
+    created_at,
+    updated_at,
+    last_login
+FROM users
+WHERE id = $1
+`
+
+type GetUserByIDRow struct {
+	ID               int64
+	FirstName        string
+	LastName         string
+	Email            string
+	ProfileAvatarUrl string
+	PhoneNumber      sql.NullString
+	Password         []byte
+	OidcSub          string
+	RoleLevel        string
+	Activated        bool
+	Version          int32
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
+	LastLogin        time.Time
+}
+
+func (q *Queries) GetUserByID(ctx context.Context, id int64) (GetUserByIDRow, error) {
+	row := q.db.QueryRowContext(ctx, getUserByID, id)
+	var i GetUserByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.FirstName,
+		&i.LastName,
+		&i.Email,
+		&i.ProfileAvatarUrl,
+		&i.PhoneNumber,
 		&i.Password,
 		&i.OidcSub,
 		&i.RoleLevel,
@@ -110,13 +192,14 @@ SET
     last_name = $2,
     email = $3,
     profile_avatar_url = $4,
-    password = $5,
-    role_level = $6,
-    activated = $7,
+    phone_number = $5,
+    password = $6,
+    role_level = $7,
+    activated = $8,
     version = version + 1,
     updated_at = NOW(),
-    last_login = $8
-WHERE id = $9 AND version = $10
+    last_login = $9
+WHERE id = $10 AND version = $11
 RETURNING updated_at, version
 `
 
@@ -125,6 +208,7 @@ type UpdateUserParams struct {
 	LastName         string
 	Email            string
 	ProfileAvatarUrl string
+	PhoneNumber      sql.NullString
 	Password         []byte
 	RoleLevel        string
 	Activated        bool
@@ -144,6 +228,7 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (UpdateU
 		arg.LastName,
 		arg.Email,
 		arg.ProfileAvatarUrl,
+		arg.PhoneNumber,
 		arg.Password,
 		arg.RoleLevel,
 		arg.Activated,
