@@ -22,7 +22,6 @@ const (
 // Define a custom ErrDuplicateEmail error.
 var (
 	ErrDuplicateEmail = errors.New("duplicate email")
-	ErrEditConflict   = errors.New("edit conflict")
 )
 
 /*
@@ -46,6 +45,7 @@ type User struct {
 	LastName         string    `json:"last_name"`
 	Email            string    `json:"email"`
 	ProfileAvatarURL string    `json:"profile_avatar_url"`
+	PhoneNumber      string    `json:"phone_number,omitempty"`
 	Password         password  `json:"-"`
 	OIDCSubject      string    `json:"-"`
 	RoleLevel        string    `json:"role_level"`
@@ -159,6 +159,26 @@ func (m UserModel) GetByEmail(email, encryption_key string) (*User, error) {
 	return emailUser, nil
 }
 
+// GetUserByID retrieves a user by their ID
+func (m UserModel) GetUserByID(userID int64) (*User, error) {
+	ctx, cancel := contextGenerator(context.Background(), DefaultUserDBContextTimeout)
+	defer cancel()
+
+	user, err := m.DB.GetUserByID(ctx, userID)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrGeneralRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	// populate the User struct
+	populatedUser := populateUser(user)
+	return populatedUser, nil
+}
+
 func ValidateEmail(v *validator.Validator, email string) {
 	v.Check(email != "", "email", "must be provided")
 	v.Check(validator.Matches(email, validator.EmailRX), "email", "must be a valid email address")
@@ -259,6 +279,7 @@ func (m UserModel) UpdateUser(user *User) error {
 		LastName:         user.LastName,
 		Email:            user.Email,
 		ProfileAvatarUrl: user.ProfileAvatarURL,
+		PhoneNumber:      sql.NullString{String: user.PhoneNumber, Valid: true},
 		Password:         user.Password.hash,
 		RoleLevel:        user.RoleLevel,
 		Activated:        user.Activated,
@@ -306,6 +327,7 @@ func populateUser(userRow interface{}) *User {
 			LastName:         user.LastName,
 			Email:            user.Email,
 			ProfileAvatarURL: user.ProfileAvatarUrl,
+			PhoneNumber:      user.PhoneNumber.String,
 			Password:         userPassword,
 			OIDCSubject:      user.OidcSub,
 			RoleLevel:        user.RoleLevel,

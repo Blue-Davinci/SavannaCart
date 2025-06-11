@@ -38,6 +38,7 @@ func (app *application) routes() http.Handler {
 	// this are hybrid routes
 	v1Router.With(dynamicMiddleware.Then).Mount("/categories", app.categoryRoutes(&adminPermissionMiddleware))
 	v1Router.With(dynamicMiddleware.Then).Mount("/products", app.productRoutes(&adminPermissionMiddleware))
+	v1Router.With(dynamicMiddleware.Then).Mount("/orders", app.orderRoutes(&dynamicMiddleware))
 
 	// Mount the v1Router to the main base router
 	router.Mount("/v1", v1Router)
@@ -92,4 +93,19 @@ func (app *application) productRoutes(adminMIddleware *alice.Chain) chi.Router {
 	productRoutes.With(adminMIddleware.Then).Post("/", app.createNewProductsHandler)
 
 	return productRoutes
+}
+
+func (app *application) orderRoutes(adminPermissionMiddleware *alice.Chain) chi.Router {
+	orderRoutes := chi.NewRouter()
+	// Create a new order, open to everyone who is authenticated
+	orderRoutes.Post("/", app.createOrderHandler)
+	// Get all orders, open to everyone who is authenticated
+	orderRoutes.Get("/", app.getUserOrdersHandler)
+
+	// admin only routes
+	orderRoutes.With(adminPermissionMiddleware.Then).Get("/admin", app.getAllOrdersHandler)
+	orderRoutes.With(adminPermissionMiddleware.Then).Get("/statistics", app.getOrderStatisticsHandler)
+	orderRoutes.With(adminPermissionMiddleware.Then).Patch("/{orderID:[0-9]+}", app.updateOrderStatusHandler)
+
+	return orderRoutes
 }

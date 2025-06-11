@@ -75,6 +75,7 @@ type User struct {
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
 	LastLogin        time.Time
+	PhoneNumber      sql.NullString
 }
 
 type UsersPermission struct {
