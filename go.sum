@@ -1,3 +1,7 @@
+github.com/AfricasTalkingLtd/africastalking-go v0.0.0-20190314130600-8bb53dce16a2 h1:wp04feJXkPgcTQCnjdm5/9Ru8YF4A8YwuULHZB9RJQ8=
+github.com/AfricasTalkingLtd/africastalking-go v0.0.0-20190314130600-8bb53dce16a2/go.mod h1:ygJljoO3Y36QIzOIgYWsKxGhvSuT+6VFhxX8rpbGwVg=
+github.com/AndroidStudyOpenSource/africastalking-go v0.0.0-20200515172509-94a151ad63fe h1:uXPOrFHjkAP3NgAfOXgDwuRa3nkX3w71jT7zYGJFvFk=
+github.com/AndroidStudyOpenSource/africastalking-go v0.0.0-20200515172509-94a151ad63fe/go.mod h1:1oj0QW+1duBl8Ono/Gg2NhXpu8fAqFrquBejPq2qy14=
 github.com/cespare/xxhash/v2 v2.1.2 h1:YRXhKfTDauu4ajMg1TPgFO5jnlC2HCbmLXMcTG5cbYE=
 github.com/cespare/xxhash/v2 v2.1.2/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
 github.com/coreos/go-oidc/v3 v3.14.1 h1:9ePWwfdwC4QKRlCXsJGou56adA/owXczOzwKdOumLqk=

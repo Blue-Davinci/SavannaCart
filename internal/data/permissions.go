@@ -41,24 +41,26 @@ type SuperUsersWithPermissions struct {
 func ValidatePermissionsAddition(v *validator.Validator, permissions *UserPermission) {
 	v.Check(len(permissions.Permissions) != 0, "permissions", "must be provided")
 	//v.Check()
-	v.Check(permissions.UserID != 0, "user_id", "must be provided")
+	v.Check(permissions.UserID > 0, "user_id", "must be provided")
 }
 func ValidatePermissionsDeletion(v *validator.Validator, userID int64, permissionCode string) {
 	v.Check(permissionCode != "", "codes", "must be provided")
 	//v.Check()
-	v.Check(userID != 0, "user_id", "must be provided")
+	v.Check(userID > 0, "user_id", "must be provided")
 }
 
 func ValidatePermission(v *validator.Validator, permissionCode string) {
 	v.Check(permissionCode != "", "codes", "must be provided")
-	//check permission validity
-	v.Check(IsValidPermissionFormat(permissionCode), "permissions", "must be in the format 'permission:code'")
+	//check permission validity only if code is not empty
+	if permissionCode != "" {
+		v.Check(IsValidPermissionFormat(permissionCode), "permissions", "must be in the format 'permission:code'")
+	}
 }
 
 // Function to check if a permission matches the format "permission:code"
 func IsValidPermissionFormat(permission string) bool {
-	// Compile the regular expression
-	re := regexp.MustCompile(`^[a-zA-Z]+:[a-zA-Z]+$`)
+	// Compile the regular expression to allow letters, numbers, underscores, and hyphens
+	re := regexp.MustCompile(`^[a-zA-Z0-9_-]+:[a-zA-Z0-9_-]+$`)
 	// Check if the permission matches the format
 	return re.MatchString(permission)
 }
