@@ -1,0 +1,408 @@
+{{define "subject"}}New Order Alert - Order #{{.orderID}} - SavannaCart{{end}}
+
+{{define "htmlBody"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Order Alert - SavannaCart Admin</title>
+    <!--[if mso]>
+    <noscript>
+        <xml>
+            <o:OfficeDocumentSettings>
+                <o:PixelsPerInch>96</o:PixelsPerInch>
+            </o:OfficeDocumentSettings>
+        </xml>
+    </noscript>
+    <![endif]-->
+    <style>
+        /* Reset styles */
+        body, table, td, p, a, li, blockquote {
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+        }
+        table, td {
+            mso-table-lspace: 0pt;
+            mso-table-rspace: 0pt;
+        }
+        img {
+            -ms-interpolation-mode: bicubic;
+            border: 0;
+            height: auto;
+            line-height: 100%;
+            outline: none;
+            text-decoration: none;
+        }
+        
+        /* Email client specific styles */
+        .ReadMsgBody { width: 100%; }
+        .ExternalClass { width: 100%; }
+        .ExternalClass, .ExternalClass p, .ExternalClass span, .ExternalClass font, .ExternalClass td, .ExternalClass div {
+            line-height: 100%;
+        }
+        
+        /* Main styles */
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100% !important;
+            min-width: 100%;
+            background-color: #f4f4f4;
+            font-family: Arial, sans-serif;
+        }
+        
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+        }
+        
+        .header-section {
+            background: linear-gradient(135deg, #e17055 0%, #d63031 100%);
+            background-color: #e17055; /* Fallback */
+            text-align: center;
+            padding: 30px 20px;
+        }
+        
+        .header-section img {
+            max-width: 240px;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+        
+        .content-section {
+            padding: 40px 30px;
+        }
+        
+        .alert-badge {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 16px;
+            text-transform: uppercase;
+            margin: 10px 0;
+            background-color: #e17055;
+            color: #ffffff;
+        }
+        
+        .order-header {
+            background-color: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 25px 0;
+            text-align: center;
+        }
+        
+        .order-id {
+            color: #2d3436;
+            font-size: 28px;
+            font-weight: bold;
+            margin: 0 0 15px 0;
+        }
+        
+        .order-total {
+            color: #e17055;
+            font-size: 24px;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+        
+        .order-date {
+            color: #636e72;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        
+        .customer-info {
+            background-color: #e8f4fd;
+            border-left: 4px solid #74b9ff;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .customer-name {
+            color: #2d3436;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 0 0 10px 0;
+        }
+        
+        .customer-email {
+            color: #636e72;
+            font-size: 16px;
+            margin: 5px 0;
+        }
+        
+        .items-section {
+            margin: 30px 0;
+        }
+        
+        .items-header {
+            color: #2d3436;
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #dee2e6;
+        }
+        
+        .item-row {
+            border-bottom: 1px solid #e9ecef;
+            padding: 15px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .item-row:last-child {
+            border-bottom: none;
+        }
+        
+        .item-name {
+            color: #2d3436;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .item-details {
+            color: #636e72;
+            font-size: 14px;
+        }
+        
+        .item-price {
+            color: #e17055;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .action-section {
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+            background-color: #74b9ff; /* Fallback */
+            color: #ffffff;
+            text-align: center;
+            padding: 30px;
+            border-radius: 8px;
+            margin: 30px 0;
+        }
+        
+        .action-heading {
+            color: #ffffff;
+            font-size: 22px;
+            font-weight: bold;
+            margin: 0 0 15px 0;
+        }
+        
+        .action-text {
+            color: #ffffff;
+            font-size: 16px;
+            margin: 0 0 20px 0;
+            opacity: 0.9;
+        }
+        
+        .action-button {
+            background-color: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 25px;
+            color: #ffffff;
+            display: inline-block;
+            font-size: 16px;
+            font-weight: bold;
+            padding: 15px 30px;
+            text-decoration: none;
+            margin: 10px 0;
+        }
+        
+        .action-button:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .stats-section {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+        }
+        
+        .stats-text {
+            color: #636e72;
+            font-size: 14px;
+            text-align: center;
+            margin: 0;
+        }
+        
+        .footer-section {
+            background: linear-gradient(135deg, #2d3436 0%, #636e72 100%);
+            background-color: #2d3436; /* Fallback */
+            color: #ffffff;
+            text-align: center;
+            padding: 25px;
+        }
+        
+        .footer-text {
+            color: #b2bec3;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        
+        /* Mobile styles */
+        @media only screen and (max-width: 600px) {
+            .email-container {
+                width: 100% !important;
+                margin: 0 !important;
+            }
+            
+            .content-section {
+                padding: 25px 20px !important;
+            }
+            
+            .order-header {
+                padding: 20px !important;
+            }
+            
+            .order-id {
+                font-size: 24px !important;
+            }
+            
+            .item-row {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+            }
+            
+            .item-price {
+                margin-top: 10px !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+        <tr>
+            <td align="center" style="background-color: #f4f4f4; padding: 20px 0;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" class="email-container" width="600">
+                    
+                    <!-- Header Section -->
+                    <tr>
+                        <td class="header-section">
+                            <img src="https://i.ibb.co/Rpq9Tvwy/savanna-cart-high-resolution-logo-photoaidcom-cropped.png" alt="SavannaCart Logo" style="max-width: 240px; height: auto;">
+                        </td>
+                    </tr>
+                    
+                    <!-- Content Section -->
+                    <tr>
+                        <td class="content-section">
+                            <div style="text-align: center; margin-bottom: 30px;">
+                                <span class="alert-badge">🚨 New Order Alert</span>
+                            </div>
+                            
+                            <h1 style="color: #2d3436; font-size: 24px; text-align: center; margin-bottom: 20px;">
+                                New Order Received! 🎉
+                            </h1>
+                            
+                            <p style="color: #636e72; font-size: 16px; text-align: center; margin-bottom: 25px;">
+                                A new customer order has been placed and requires your attention:
+                            </p>
+                            
+                            <!-- Order Header -->
+                            <div class="order-header">
+                                <div class="order-id">Order #{{.orderID}}</div>
+                                <div class="order-total">Total: KES {{.totalAmount}}</div>
+                                <div class="order-date">Placed on {{.orderDate}}</div>
+                            </div>
+                            
+                            <!-- Customer Information -->
+                            <div class="customer-info">
+                                <div class="customer-name">👤 Customer: {{.customerFirstName}} {{.customerLastName}}</div>
+                                <div class="customer-email">📧 Email: {{.customerEmail}}</div>
+                                {{if .customerPhone}}
+                                <div class="customer-email">📱 Phone: {{.customerPhone}}</div>
+                                {{end}}
+                            </div>
+                            
+                            <!-- Order Items -->
+                            <div class="items-section">
+                                <div class="items-header">📦 Order Items ({{len .items}} items)</div>
+                                {{range .items}}
+                                <div class="item-row">
+                                    <div>
+                                        <div class="item-name">{{.productName}}</div>
+                                        <div class="item-details">Quantity: {{.quantity}} × KES {{.unitPrice}}</div>
+                                    </div>
+                                    <div class="item-price">KES {{.totalPrice}}</div>
+                                </div>
+                                {{end}}
+                            </div>
+                            
+                            <!-- Action Section -->
+                            <div class="action-section">
+                                <h2 class="action-heading">Quick Actions</h2>
+                                <p class="action-text">Access the admin dashboard to manage this order</p>
+                                <a href="{{.dashboardURL}}/orders/{{.orderID}}" class="action-button">📋 View Order Details</a>
+                            </div>
+                            
+                            <!-- Stats Section -->
+                            <div class="stats-section">
+                                <p class="stats-text">
+                                    <strong>📊 Order Processing:</strong> This order is now pending and awaiting fulfillment. Please review inventory and update the order status accordingly.
+                                </p>
+                            </div>
+                            
+                            <p style="color: #636e72; font-size: 16px; text-align: center; margin-top: 30px;">
+                                <strong>Admin Notification System</strong><br>
+                                SavannaCart Admin Panel 🔧
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer Section -->
+                    <tr>
+                        <td class="footer-section">
+                            <p class="footer-text">This is an automated admin notification from SavannaCart</p>
+                            <p style="color: #b2bec3; font-size: 12px; margin: 0;">
+                                © {{.currentYear}} SavannaCart. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+                    
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+{{end}}
+
+{{define "plainBody"}}
+🚨 NEW ORDER ALERT - SavannaCart Admin
+
+New Order Received!
+==================
+
+Order Details:
+- Order #{{.orderID}}
+- Total: KES {{.totalAmount}}
+- Date: {{.orderDate}}
+
+Customer Information:
+- Name: {{.customerFirstName}} {{.customerLastName}}
+- Email: {{.customerEmail}}
+{{if .customerPhone}}- Phone: {{.customerPhone}}{{end}}
+
+Order Items ({{len .items}} items):
+{{range .items}}- {{.productName}} (Qty: {{.quantity}}) - KES {{.totalPrice}}
+{{end}}
+
+Quick Actions:
+- View Order: {{.dashboardURL}}/orders/{{.orderID}}
+
+This order is now pending and awaiting fulfillment. Please review inventory and update the order status accordingly.
+
+---
+This is an automated admin notification from SavannaCart
+© {{.currentYear}} SavannaCart. All rights reserved.
+{{end}}

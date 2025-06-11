@@ -4,10 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/Blue-Davinci/SavannaCart/internal/data"
 	"github.com/Blue-Davinci/SavannaCart/internal/validator"
+	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
 )
 
@@ -229,14 +231,17 @@ func (app *application) createOrderHandler(w http.ResponseWriter, r *http.Reques
 		}
 		return
 	}
-
 	// Send order confirmation email in background
 	app.background(func() {
 		app.sendOrderConfirmationEmail(order.ID)
 	})
 
+	// Send admin order notification email in background
+	app.background(func() {
+		app.sendAdminOrderNotification(order.ID)
+	})
+
 	// TODO: Send SMS notification to user
-	// TODO: Send email notification to admin
 
 	err = app.writeJSON(w, http.StatusCreated, envelope{"order": order}, nil)
 	if err != nil {
@@ -331,13 +336,13 @@ func (app *application) sendOrderStatusUpdateEmail(orderID int32, newStatus stri
 			"unitPrice":   item.UnitPriceKES.StringFixed(2),
 		})
 	}
-
 	// Create email data map
 	data := map[string]any{
 		"firstName":   user.FirstName,
 		"lastName":    user.LastName,
 		"orderID":     fullOrder.ID,
 		"status":      newStatus,
+		"statusLower": strings.ToLower(newStatus), // Add lowercase version for CSS classes
 		"totalAmount": fullOrder.TotalKES.StringFixed(2),
 		"orderDate":   fullOrder.CreatedAt.Format("January 2, 2006"),
 		"items":       emailItems,
@@ -395,13 +400,13 @@ func (app *application) sendOrderConfirmationEmail(orderID int32) {
 			"unitPrice":   item.UnitPriceKES.StringFixed(2),
 		})
 	}
-
 	// Create email data map for order confirmation
 	data := map[string]any{
 		"firstName":   user.FirstName,
 		"lastName":    user.LastName,
 		"orderID":     fullOrder.ID,
 		"status":      "PENDING", // New orders start as pending
+		"statusLower": "pending", // Add lowercase version for CSS classes
 		"totalAmount": fullOrder.TotalKES.StringFixed(2),
 		"orderDate":   fullOrder.CreatedAt.Format("January 2, 2006"),
 		"items":       emailItems,
@@ -416,8 +421,118 @@ func (app *application) sendOrderConfirmationEmail(orderID int32) {
 			zap.Error(err))
 		return
 	}
-
 	app.logger.Info("Order confirmation email sent successfully",
 		zap.String("email", user.Email),
 		zap.Int32("order_id", fullOrder.ID))
+}
+
+// sendAdminOrderNotification sends email notifications to all super users about new orders
+func (app *application) sendAdminOrderNotification(orderID int32) {
+	// Get full order details with items
+	fullOrder, err := app.models.Orders.GetOrderWithItems(orderID)
+	if err != nil {
+		app.logger.Error("Failed to get order details for admin notification",
+			zap.Int32("order_id", orderID),
+			zap.Error(err))
+		return
+	}
+
+	// Get customer details using the UserID from the order
+	customer, err := app.models.Users.GetUserByID(int64(fullOrder.UserID))
+	if err != nil {
+		app.logger.Error("Failed to get customer details for admin notification",
+			zap.Int32("order_id", orderID),
+			zap.Int32("user_id", fullOrder.UserID),
+			zap.Error(err))
+		return
+	}
+
+	// Get all super users with permissions
+	superUsers, err := app.models.Permissions.GetAllSuperUsersWithPermissions()
+	if err != nil {
+		app.logger.Error("Failed to get super users for admin notification",
+			zap.Int32("order_id", orderID),
+			zap.Error(err))
+		return
+	}
+
+	// If no super users found, log and return
+	if len(superUsers) == 0 {
+		app.logger.Warn("No super users found for admin notification",
+			zap.Int32("order_id", orderID))
+		return
+	}
+
+	// Prepare order items for email template
+	var emailItems []map[string]any
+	for _, item := range fullOrder.Items {
+		// Calculate total price for this item (quantity * unit price)
+		quantityDecimal := decimal.NewFromInt32(item.Quantity)
+		totalPrice := item.UnitPriceKES.Mul(quantityDecimal)
+
+		emailItems = append(emailItems, map[string]any{
+			"productName": item.ProductName,
+			"quantity":    item.Quantity,
+			"unitPrice":   item.UnitPriceKES.StringFixed(2),
+			"totalPrice":  totalPrice.StringFixed(2),
+		})
+	}
+
+	// Create email data map for admin notification
+	data := map[string]any{
+		"orderID":           fullOrder.ID,
+		"totalAmount":       fullOrder.TotalKES.StringFixed(2),
+		"orderDate":         fullOrder.CreatedAt.Format("January 2, 2006 at 3:04 PM"),
+		"customerFirstName": customer.FirstName,
+		"customerLastName":  customer.LastName,
+		"customerEmail":     customer.Email,
+		"items":             emailItems,
+		"dashboardURL":      "https://admin.savannacart.com", // You can make this configurable
+		"currentYear":       fullOrder.CreatedAt.Year(),
+	}
+
+	// Handle phone number (it's a string, not sql.NullString)
+	if customer.PhoneNumber != "" {
+		data["customerPhone"] = customer.PhoneNumber
+	} else {
+		data["customerPhone"] = nil
+	}
+
+	// Create a map to track unique emails (to avoid sending duplicate emails to same admin)
+	uniqueEmails := make(map[string]bool)
+	var adminEmails []string
+
+	// Collect unique admin emails
+	for _, superUser := range superUsers {
+		if !uniqueEmails[superUser.UserEmail] {
+			uniqueEmails[superUser.UserEmail] = true
+			adminEmails = append(adminEmails, superUser.UserEmail)
+		}
+	}
+
+	// Send email to each unique admin
+	successCount := 0
+	failureCount := 0
+
+	for _, adminEmail := range adminEmails {
+		err = app.mailer.Send(adminEmail, "admin_order_notification.tmpl", data)
+		if err != nil {
+			app.logger.Error("Error sending admin order notification email",
+				zap.String("admin_email", adminEmail),
+				zap.Int32("order_id", fullOrder.ID),
+				zap.Error(err))
+			failureCount++
+		} else {
+			app.logger.Info("Admin order notification email sent successfully",
+				zap.String("admin_email", adminEmail),
+				zap.Int32("order_id", fullOrder.ID))
+			successCount++
+		}
+	}
+	// Log summary
+	app.logger.Info("Admin order notification summary",
+		zap.Int32("order_id", fullOrder.ID),
+		zap.Int("total_admins", len(adminEmails)),
+		zap.Int("success_count", successCount),
+		zap.Int("failure_count", failureCount))
 }
