@@ -61,6 +61,8 @@ func (app *application) apiKeyRoutes(dynamicMiddleware *alice.Chain) chi.Router 
 	apiKeyRoutes.Get("/authentication", app.createAuthenticationApiKeyHandler)
 	apiKeyRoutes.Put("/activation", app.activateUserHandler)
 
+	// updateUserInfo
+	apiKeyRoutes.With(dynamicMiddleware.Then).Patch("/user", app.updateUserInfo)
 	// lougput route only applies to people who are registered
 	apiKeyRoutes.With(dynamicMiddleware.Then).Post("/logout", app.logoutUserHandler)
 	return apiKeyRoutes

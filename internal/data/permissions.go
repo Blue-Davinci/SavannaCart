@@ -31,6 +31,13 @@ type UserPermission struct {
 	Permissions  []string `json:"permissions"`
 }
 
+type SuperUsersWithPermissions struct {
+	UserID        int64  `json:"user_id"`
+	UserFirstName string `json:"user_first_name"`
+	UserLastName  string `json:"user_last_name"`
+	UserEmail     string `json:"user_email"`
+}
+
 func ValidatePermissionsAddition(v *validator.Validator, permissions *UserPermission) {
 	v.Check(len(permissions.Permissions) != 0, "permissions", "must be provided")
 	//v.Check()
@@ -69,6 +76,30 @@ func (p Permissions) Include(code string) bool {
 		}
 	}
 	return false
+}
+
+// GetAllSuperUsersWithPermissions() is a method that retrieves all super users with their permissions
+// from the database. It returns a slice of UserPermission pointers and an error if any occurs.
+func (m PermissionModel) GetAllSuperUsersWithPermissions() ([]*SuperUsersWithPermissions, error) {
+	// set up context
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	// create our super users with permissions
+	var superUsersWithPermissions []*SuperUsersWithPermissions
+	// call the database method
+	dbSuperUsers, err := m.DB.GetAllSuperUsersWithPermissions(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, user := range dbSuperUsers {
+		superUsersWithPermissions = append(superUsersWithPermissions, &SuperUsersWithPermissions{
+			UserID:        user.UserID,
+			UserFirstName: user.FirstName,
+			UserLastName:  user.LastName,
+			UserEmail:     user.Email,
+		})
+	}
+	return superUsersWithPermissions, nil
 }
 
 // GetAllPermissions() just returns all available permissions currently in the system.
