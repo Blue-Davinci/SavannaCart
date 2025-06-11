@@ -9,6 +9,7 @@ import (
 
 	"github.com/Blue-Davinci/SavannaCart/internal/database"
 	"github.com/Blue-Davinci/SavannaCart/internal/validator"
+	"github.com/shopspring/decimal"
 )
 
 var (
@@ -27,6 +28,13 @@ type Category struct {
 	Version   int32     `json:"version"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+}
+
+type CategoryAveragePrice struct {
+	CategoryID   int32           `json:"category_id"`
+	AveragePrice decimal.Decimal `json:"average_price"`
+	ProductCount int32           `json:"product_count"`
+	Currency     string          `json:"currency"`
 }
 
 // Timeout constants for our module
@@ -183,6 +191,41 @@ func (m CategoryModel) DeleteCategoryByID(categoryID int32) error {
 	}
 	// done
 	return nil
+}
+
+// GetCategoryAveragePrice calculates the average price of all products in a category and its children.
+// It takes a category ID and returns a CategoryAveragePrice struct with the results and any error that occurs.
+func (m CategoryModel) GetCategoryAveragePrice(categoryID int32) (*CategoryAveragePrice, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), DefaultCategoryDBContextTimeout)
+	defer cancel()
+
+	result, err := m.DB.GetCategoryAveragePrice(ctx, categoryID)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrGeneralRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+	// Convert the average price from string to decimal.Decimal
+	// PostgreSQL NUMERIC is always returned as string
+	averagePrice, err := decimal.NewFromString(result.AveragePrice)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert product count (it's already int64, just convert to int32)
+	productCount := int32(result.ProductCount)
+
+	categoryAverage := &CategoryAveragePrice{
+		CategoryID:   categoryID,
+		AveragePrice: averagePrice,
+		ProductCount: productCount,
+		Currency:     "KES",
+	}
+
+	return categoryAverage, nil
 }
 
 func populateCategories(categoryRow any) *Category {
