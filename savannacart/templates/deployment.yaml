@@ -1,0 +1,164 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "savannacart.fullname" . }}
+  labels:
+    {{- include "savannacart.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "savannacart.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "savannacart.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "savannacart.serviceAccountName" . }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.targetPort }}
+              protocol: TCP
+          env:
+            # Non-sensitive environment variables from ConfigMap
+            - name: SAVANNACART_API_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "savannacart.fullname" . }}-config
+                  key: SAVANNACART_API_NAME
+            - name: SAVANNACART_API_AUTHOR
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "savannacart.fullname" . }}-config
+                  key: SAVANNACART_API_AUTHOR
+            - name: ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "savannacart.fullname" . }}-config
+                  key: ENV
+            - name: SAVANNACART_CORS_TRUSTED_ORIGINS
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "savannacart.fullname" . }}-config
+                  key: SAVANNACART_CORS_TRUSTED_ORIGINS
+            # Individual database components for DSN construction
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "savannacart.fullname" . }}-secrets
+                  key: db-user
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "savannacart.fullname" . }}-secrets
+                  key: db-password
+            - name: DB_HOST
+              value: "{{ include "savannacart.fullname" . }}-postgresql"
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: "savannacart"
+            - name: DB_SSLMODE
+              value: "disable"
+            - name: SAVANNACART_OIDC_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "savannacart.fullname" . }}-secrets
+                  key: oidc-client-id
+            - name: SAVANNACART_OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "savannacart.fullname" . }}-secrets
+                  key: oidc-client-secret
+            - name: SAVANNACART_SMTP_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "savannacart.fullname" . }}-secrets
+                  key: smtp-host
+            - name: SAVANNACART_SMTP_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "savannacart.fullname" . }}-secrets
+                  key: smtp-username
+            - name: SAVANNACART_SMTP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "savannacart.fullname" . }}-secrets
+                  key: smtp-password
+            - name: SAVANNACART_SMTP_SENDER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "savannacart.fullname" . }}-secrets
+                  key: smtp-sender
+            - name: SAVANNACART_SMS_ACCOUNT_SID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "savannacart.fullname" . }}-secrets
+                  key: sms-account-sid
+            - name: SAVANNACART_SMS_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "savannacart.fullname" . }}-secrets
+                  key: sms-auth-token
+            - name: SAVANNACART_SMS_FROM_NUMBER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "savannacart.fullname" . }}-secrets
+                  key: sms-from-number
+          {{- with .Values.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

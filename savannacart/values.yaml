@@ -1,0 +1,235 @@
+# Default values for savannacart.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Application configuration
+app:
+  name: "SavannaCart API"
+  version: "0.1.0"
+  author: "Blue-Davinci"
+  environment: "production"
+
+# This will set the replicaset count more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/
+replicaCount: 2
+
+# This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
+image:
+  repository: savannacart/api
+  # This sets the pull policy for images.
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "v1.2"
+
+# This is for the secrets for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+imagePullSecrets: []
+# This is to override the chart name.
+nameOverride: ""
+fullnameOverride: ""
+
+# This section builds out the service account more information can be found here: https://kubernetes.io/docs/concepts/security/service-accounts/
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Automatically mount a ServiceAccount's API credentials?
+  automount: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+# This is for setting Kubernetes Annotations to a Pod.
+# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+podAnnotations: {}
+# This is for setting Kubernetes Labels to a Pod.
+# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+podLabels: {}
+
+podSecurityContext:
+  fsGroup: 1000
+  runAsNonRoot: true
+  runAsUser: 1000
+
+securityContext:
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: false
+  runAsNonRoot: true
+  runAsUser: 1000
+  allowPrivilegeEscalation: false
+
+# Application environment variables
+env:
+  # Database configuration (will be overridden by secrets)
+  DB_HOST: "postgres-service"
+  DB_PORT: "5432"
+  DB_NAME: "savannacart"
+  DB_SSLMODE: "disable"
+  
+  # Server configuration
+  PORT: "4000"
+  ENV: "production"
+  
+  # CORS configuration
+  CORS_TRUSTED_ORIGINS: "http://localhost:3000,https://yourdomain.com"
+  
+  # Rate limiting
+  RATE_LIMIT_RPS: "2"
+  RATE_LIMIT_BURST: "4"
+  RATE_LIMIT_ENABLED: "true"
+
+# Secret configuration (these will be encrypted using Sealed Secrets)
+secrets:
+  # Database credentials
+  dbUser: "savannacart"
+  dbPassword: "savannacart-db-password"
+  
+  # OAuth configuration
+  oidcClientId: "your-oidc-client-id"
+  oidcClientSecret: "your-oidc-client-secret"
+  
+  # SMTP configuration for emails
+  smtpHost: "smtp.gmail.com"
+  smtpUsername: "your-email@gmail.com"
+  smtpPassword: "your-app-password"
+  smtpSender: "noreply@savannacart.com"
+  
+  # SMS configuration
+  smsAccountSid: "your-twilio-account-sid"
+  smsAuthToken: "your-twilio-auth-token"
+  smsFromNumber: "+1234567890"
+
+# This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/
+service:
+  # This sets the service type more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
+  type: ClusterIP
+  # This sets the ports more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#field-spec-ports
+  port: 80
+  targetPort: 4000
+
+# This block is for setting up the ingress for more information can be found here: https://kubernetes.io/docs/concepts/services-networking/ingress/
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: api.savannacart.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: savannacart-api-tls
+      hosts:
+        - api.savannacart.local
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+# This is to setup the liveness and readiness probes more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+livenessProbe:
+  httpGet:
+    path: /v1/api/healthcheck
+    port: 4000
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /v1/api/healthcheck
+    port: 4000
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+# This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+# PostgreSQL dependency configuration
+postgresql:
+  enabled: true
+  auth:
+    postgresPassword: "postgres-admin-password"
+    username: "savannacart"
+    password: "savannacart-db-password"
+    database: "savannacart"
+  primary:
+    persistence:
+      enabled: true
+      size: 10Gi
+    resources:
+      requests:
+        memory: 256Mi
+        cpu: 250m
+      limits:
+        memory: 512Mi
+        cpu: 500m
+
+# Redis dependency configuration (for caching and sessions)
+redis:
+  enabled: true
+  auth:
+    enabled: true
+    password: "redis-password"
+  master:
+    persistence:
+      enabled: true
+      size: 5Gi
+    resources:
+      requests:
+        memory: 128Mi
+        cpu: 100m
+      limits:
+        memory: 256Mi
+        cpu: 200m
+
+# Sealed Secrets configuration
+sealedSecrets:
+  enabled: false  # Set to true for production with proper sealed secrets
+  namespace: "kube-system"
+
+# Additional volumes on the output Deployment definition.
+volumes: []
+# - name: foo
+#   secret:
+#     secretName: mysecret
+#     optional: false
+
+# Additional volumeMounts on the output Deployment definition.
+volumeMounts: []
+# - name: foo
+#   mountPath: "/etc/foo"
+#   readOnly: true
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      podAffinityTerm:
+        labelSelector:
+          matchExpressions:
+          - key: app.kubernetes.io/name
+            operator: In
+            values:
+            - savannacart
+        topologyKey: kubernetes.io/hostname

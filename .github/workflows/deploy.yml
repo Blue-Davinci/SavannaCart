@@ -112,8 +112,7 @@ jobs:
         echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
         echo "Branch: ${{ github.ref_name }}"
         echo "Commit: ${{ github.sha }}"
-        # Add your deployment commands here
-        # For example:
+        # some deployment commands here
         # - SSH to your server
         # - Pull the new image
         # - Update docker-compose.yml
