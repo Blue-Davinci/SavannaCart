@@ -1,3 +1,40 @@
+# Environment files with secrets
 .env
 .env.*
+!.env.example
+
+# Binary files
 *.exe
+api.exe
+
+# Secret files and sealed secrets output
+*-sealed-secrets.yaml
+complete-sealed-secrets.yaml
+secrets.yaml
+
+# Temporary Kubernetes files
+*.tmp
+*.temp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build artifacts
+bin/
+dist/
+build/
+
+# Logs
+*.log
+logs/
+
+# Coverage reports
+coverage.txt
+*.out
