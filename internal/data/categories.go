@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -39,7 +40,7 @@ type CategoryAveragePrice struct {
 
 // Timeout constants for our module
 const (
-	DefaultCategoryDBContextTimeout = 5 * time.Second
+	DefaultCategoryDBContextTimeout = 10 * time.Second
 )
 
 func ValidateURLID(v *validator.Validator, stockID int64, fieldName string) {
@@ -198,13 +199,14 @@ func (m CategoryModel) DeleteCategoryByID(categoryID int32) error {
 func (m CategoryModel) GetCategoryAveragePrice(categoryID int32) (*CategoryAveragePrice, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), DefaultCategoryDBContextTimeout)
 	defer cancel()
-
+	fmt.Println("Getting category average price for category ID:", categoryID)
 	result, err := m.DB.GetCategoryAveragePrice(ctx, categoryID)
 	if err != nil {
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
 			return nil, ErrGeneralRecordNotFound
 		default:
+			fmt.Println("Error getting category average price:", err)
 			return nil, err
 		}
 	}

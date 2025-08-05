@@ -18,7 +18,7 @@ image:
   # This sets the pull policy for images.
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "v1.2"
+  tag: "latest"
 
 # This is for the secrets for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
 imagePullSecrets: []
@@ -167,7 +167,7 @@ postgresql:
   auth:
     postgresPassword: "postgres-admin-password"
     username: "savannacart"
-    password: "savannacart-db-password"
+    password: "changeme-in-production"  # This will be overridden by sealed secrets
     database: "savannacart"
   primary:
     persistence:
@@ -201,7 +201,7 @@ redis:
 
 # Sealed Secrets configuration
 sealedSecrets:
-  enabled: false  # Set to true for production with proper sealed secrets
+  enabled: true  # Set to true for production with proper sealed secrets
   namespace: "kube-system"
 
 # Additional volumes on the output Deployment definition.

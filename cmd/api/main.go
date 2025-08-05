@@ -141,7 +141,7 @@ func main() {
 	// Construct DSN from individual components if not provided directly
 	if cfg.db.dsn == "" {
 		dbUser := getEnvDefault("DB_USER", "savannacart")
-		dbPassword := getEnvDefault("DB_PASSWORD", "pa55word")
+		dbPassword := getEnvDefault("DB_PASSWORD", "changeme") // Should always be set via env
 		dbHost := getEnvDefault("DB_HOST", "localhost")
 		dbPort := getEnvDefault("DB_PORT", "5432")
 		dbName := getEnvDefault("DB_NAME", "savannacart")
