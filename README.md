@@ -68,19 +68,24 @@ Minikube (for local Kubernetes testing)
 
 ### Installing
 
-Clone the repository and run:
+Clone the repository and set up your development environment:
 
 ```bash
 git clone https://github.com/Blue-Davinci/savannacart.git
 cd savannacart
-cp .env.example .env
+make setup
 ```
 
-Configure your environment variables in `.env`:
+This will:
+- Copy `.env.example` to `.env` 
+- Download Go dependencies
+- Set up the development environment
+
+Configure your environment variables in `.env` with your actual values:
 
 ```bash
 # Database Configuration
-SAVANNACART_DB_DSN=postgres://savannacart:pa55word@localhost/savannacart?sslmode=disable
+SAVANNACART_DB_DSN=postgres://savannacart:your-password@localhost/savannacart?sslmode=disable
 
 # OAuth Configuration (replace with your Google OAuth credentials)
 SAVANNACART_OIDC_CLIENT_ID=your-google-oauth-client-id
@@ -202,7 +207,39 @@ curl -X POST \
      http://localhost:4000/v1/api/products
 ```
 
-## 🚀 Deployment <a name = "deployment"></a>
+## � Project Structure
+
+The project follows Go best practices with a clean, organized structure:
+
+```
+savannacart/
+├── cmd/api/                 # Application entry point and HTTP handlers
+├── internal/               # Private application code
+│   ├── data/              # Data models and business logic
+│   ├── database/          # SQLC generated database code
+│   ├── logger/            # Structured logging
+│   ├── mailer/            # Email notification system
+│   ├── sms/               # SMS notification system
+│   ├── sql/               # Database schema and queries
+│   └── validator/         # Input validation
+├── scripts/               # Automation and deployment scripts
+│   ├── k8s/              # Kubernetes deployment scripts
+│   └── setup-dev.sh      # Development environment setup
+├── docs/                  # Documentation
+├── savannacart/           # Helm chart for Kubernetes
+├── postman_collection/    # API testing collection
+├── docker-init/           # Docker initialization scripts
+└── bin/                   # Compiled binaries
+```
+
+### Key Features:
+- **🔒 Security-First**: No hardcoded secrets, secure secret management
+- **🐳 Containerized**: Docker with multi-stage builds and non-root execution
+- **☸️ Kubernetes-Ready**: Helm charts with sealed secrets for production
+- **📋 Well-Documented**: Comprehensive documentation and examples
+- **🧪 Tested**: Unit tests, integration tests, and API collections
+
+## �🚀 Deployment <a name = "deployment"></a>
 
 ### Docker Deployment
 

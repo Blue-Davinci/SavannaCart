@@ -7,12 +7,12 @@ services:
     environment:
       POSTGRES_DB: savannacart
       POSTGRES_USER: savannacart
-      POSTGRES_PASSWORD: pa55word
+      POSTGRES_PASSWORD: pa55word  # Only for local development
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./internal/sql/schema:/docker-entrypoint-initdb.d
+      - ./docker-init:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U savannacart -d savannacart"]
       interval: 10s
@@ -25,9 +25,10 @@ services:
     ports:
       - "4000:4000"
     environment:
-      - SAVANNACART_DB_DSN=postgres://savannacart:pa55word@postgres:5432/savannacart?sslmode=disable
-      - SAVANNACART_OIDC_CLIENT_ID=${SAVANNACART_OIDC_CLIENT_ID}
-      - SAVANNACART_OIDC_CLIENT_SECRET=${SAVANNACART_OIDC_CLIENT_SECRET}
+      - ENV=production
+      - SAVANNACART_DB_DSN=postgres://savannacart:localdev-password@postgres:5432/savannacart?sslmode=disable
+      - SAVANNACART_OIDC_CLIENT_ID=dummy-client-id-for-testing
+      - SAVANNACART_OIDC_CLIENT_SECRET=dummy-client-secret-for-testing
       - SAVANNACART_SMTP_HOST=${SAVANNACART_SMTP_HOST}
       - SAVANNACART_SMTP_USERNAME=${SAVANNACART_SMTP_USERNAME}
       - SAVANNACART_SMTP_PASSWORD=${SAVANNACART_SMTP_PASSWORD}

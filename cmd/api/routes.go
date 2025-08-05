@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
 	"github.com/justinas/alice"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 // routes() is a method that returns a http.Handler that contains all the routes for the application
@@ -64,7 +65,9 @@ func (app *application) apiKeyRoutes(dynamicMiddleware *alice.Chain) chi.Router 
 
 	// updateUserInfo
 	apiKeyRoutes.With(dynamicMiddleware.Then).Patch("/user", app.updateUserInfo)
-	// lougput route only applies to people who are registered
+	// prometheus expose using promhttp.Handler()
+	apiKeyRoutes.Handle("/metrics", promhttp.Handler())
+	// logout route only applies to people who are registered
 	apiKeyRoutes.With(dynamicMiddleware.Then).Post("/logout", app.logoutUserHandler)
 	return apiKeyRoutes
 }
